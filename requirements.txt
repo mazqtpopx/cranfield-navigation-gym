@@ -1,0 +1,12 @@
+cv_bridge==1.16.2
+dynamic_reconfigure==1.7.3
+genpy==0.6.15
+matplotlib==3.1.2
+numpy==1.24.3
+rospy==1.16.0
+scipy==1.12.0
+sensor_msgs==1.13.1
+skimage==0.0
+squaternion==2023.9.2
+std_msgs==0.0.1
+torch==2.1.2+cu118

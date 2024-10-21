@@ -1,0 +1,28 @@
+#Experimental notes are a field for making notes 
+#unique to each experiment (if required)
+#that will help with understanding the 
+#purpose of the experiment to a user in the future
+experimental_notes : ""
+
+scenario_settings:
+  max_steps: 50
+  reward_threshold: 100 # is this needed?
+  obs_space: "lidar" #"lidar", "camera", "dict"
+  static_goal: true
+  static_goal_xy: [0,0]
+  static_spawn: false
+  static_spawn_xy: [-3,0]
+
+drl_robot_navigation:
+  camera_noise: true
+  camera_noise_area_size: [3,3]
+  random_camera_noise_area: false #True/false
+  static_camera_noise_area_pos: [0,0]
+  camera_noise_type: "fail" # "gaussian", "fail", "random_erase"
+  lidar_noise: false
+  lidar_noise_area_size: [4,4]
+  random_lidar_noise_area: true
+  static_lidar_noise_area_pos: [0,0]
+
+
+

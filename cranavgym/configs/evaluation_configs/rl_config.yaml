@@ -1,0 +1,34 @@
+#Experimental notes are a field for making notes 
+#unique to each experiment (if required)
+#that will help with understanding the 
+#purpose of the experiment to a user in the future
+experimental_notes : ""
+
+lr: 0.0003
+batch_size: 16384
+
+evaluate_only: true
+
+#"TD3", "PPO", "PPO_LSTM", or "DreamerV3"
+algorithm: "TD3"
+
+log_dir: "~/cranfield-navigation-gym/log_dir/"
+tensorboard_dir: "~/cranfield-navigation-gym/log_dir/"
+
+TD3:
+  policy_type: "MlpPolicy" # CnnPolicy, MlpPolicy, MultiInputPolicy
+  learning_starts: 8000
+  tau: 0.005
+  action_noise: "None"
+
+
+PPO:
+  policy_type: "MlpPolicy"
+  n_steps: 2048
+  batch_size: 256
+
+
+PPO_LSTM:
+  policy_type: "MlpPolicy"
+  n_steps: 2048
+  batch_size: 256

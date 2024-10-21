@@ -1,0 +1,25 @@
+ros:
+  launchfile: "~/cranfield-navigation-gym/cranavgym/ros_interface/DRLNav.launch"
+  port: "11311"
+  step_pause_time_delta: 0.05
+
+map: 
+  min_xy: [-5,-5]
+  max_xy: [5,5]
+
+camera: 
+  img_width: 160
+  img_height: 160
+  # noise_type: "gaussian" # Moved to env_config drl_robot_navigation
+
+lidar:
+  lidar_dim: 20
+
+#Moved scenario settings to env_config
+# scenario_settings:
+#   static_goal: false
+#   static_goal_xy: [3,3]
+#   static_spawn: false
+#   static_spawn_xy: [0,0]
+
+    
