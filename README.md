@@ -1,9 +1,9 @@
 # Cranfield Navigation Gym
 ## A ROS-based Gymnasium for Training DRL Agents in Adversiarially Perturbed Navigation Scenarios
-This repository provides a **ROS-Gymnasium Wrapper** designed for developing and training Deep Reinforcement Learning (DRL) models using the Robot Operating System (ROS) for adversially perturbed (i.e. sensor denial and noise sensor areas in the environment) navigation scenarios. The package integrates with ROS (Robot Operating System) for real-time communication and Gazebo for 3D simulation, and it supports popular DRL algorithms such as TD3 and PPO through [Stable Baselines3](https://github.com/DLR-RM/stable-baselines3). Please refer to our [preprint](https://arxiv.org/abs/2410.14616) for the results and conducted experiments.
+This repository provides a **ROS-Gymnasium Wrapper** designed for developing and training Deep Reinforcement Learning (DRL) models using the Robot Operating System (ROS) for adversially perturbed (i.e. sensor denial and noise sensor areas in the environment) navigation scenarios. The package integrates with ROS (Robot Operating System) for real-time communication and Gazebo for 3D simulation, and it supports popular DRL algorithms such as TD3 and PPO through [Stable Baselines3](https://github.com/DLR-RM/stable-baselines3). 
 
 This repo contains the code for the paper **Benchmarking Deep Reinforcement Learning for
-Navigation in Denied Sensor Environments**. This environment map and the navigation screnario builds on top of the [DRL robot navigation](https://github.com/reiniscimurs/DRL-robot-navigation) repository and the publication [Goal-Driven Autonomous Exploration Through Deep Reinforcement Learning](https://ieeexplore.ieee.org/document/9645287?source=authoralert).
+Navigation in Denied Sensor Environments**. Please refer to our [preprint](https://arxiv.org/abs/2410.14616) for the results and conducted experiments. This environment map and the navigation screnario builds on top of the [DRL robot navigation](https://github.com/reiniscimurs/DRL-robot-navigation) repository and the publication [Goal-Driven Autonomous Exploration Through Deep Reinforcement Learning](https://ieeexplore.ieee.org/document/9645287?source=authoralert).
 
 ## Table of Contents
 - [Overview](#overview)
