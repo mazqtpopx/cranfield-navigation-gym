@@ -201,19 +201,15 @@ If test_envs does not run correctly, it suggests an error with your ROS/Gazebo i
 ## Citations
 If you use this repo for academic work please consider citing our [preprint](https://arxiv.org/abs/2410.14616):
 ```
-@misc{wisniewski_benchmarking_2024,
-	title = {Benchmarking Deep Reinforcement Learning for Navigation in Denied Sensor Environments},
-	url = {http://arxiv.org/abs/2410.14616},
-	number = {{arXiv}:2410.14616},
-	publisher = {{arXiv}},
-	author = {Wisniewski, Mariusz and Chatzithanos, Paraskevas and Guo, Weisi and Tsourdos, Antonios},
-	urldate = {2024-10-21},
-	date = {2024-10-18},
-	eprinttype = {arxiv},
-	eprint = {2410.14616},
-	keywords = {Computer Science - Artificial Intelligence, Computer Science - Machine Learning, Computer Science - Robotics},
+@misc{wisniewski2024benchmarkingdeepreinforcementlearning,
+      title={Benchmarking Deep Reinforcement Learning for Navigation in Denied Sensor Environments}, 
+      author={Mariusz Wisniewski and Paraskevas Chatzithanos and Weisi Guo and Antonios Tsourdos},
+      year={2024},
+      eprint={2410.14616},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2410.14616}, 
 }
-
 ```
 
 Also as this repo was built on top of Cimurs et al. work ([DRL robot navigation](https://github.com/reiniscimurs/DRL-robot-navigation)), please cite them as well: 
