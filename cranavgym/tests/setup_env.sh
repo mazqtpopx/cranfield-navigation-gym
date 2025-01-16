@@ -6,6 +6,8 @@ export ROS_HOSTNAME=localhost
 export ROS_MASTER_URI=http://localhost:11311
 export ROS_PORT_SIM=11311
 export GAZEBO_RESOURCE_PATH=~/ros-rl-env/catkin_ws/src/multi_robot_scenario/launch
+export ROSCONSOLE_CONFIG_FILE=~/cranfield-navigation-gym/cranavgym/ros_interface/rosconsole.config
+export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${logger}]: ${message}'
 
 # Source the .bashrc file
 echo "Sourcing ~/.bashrc..."
