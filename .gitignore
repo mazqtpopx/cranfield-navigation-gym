@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+*.pyo
+build
+catkin_ws
+cranavgym.egg-info
+log_dir
