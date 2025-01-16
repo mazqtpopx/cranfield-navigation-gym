@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<launch>
+    <param name="use_sim_time" value="true" />
+    <arg name="gui" default="true"/>
+    <arg name="rviz" default="true"/>
+
+    <!-- <arg name="world_name" default="$(find hector_gazebo_worlds)/worlds/rolling_landscape_120m.world"/> -->
+    <arg name="world_name" value="$(find multi_robot_scenario)/worlds/training_big_rect.world"/>
+    <arg name="name" value="uav1"/>
+    
+    <!-- Start Gazebo with wg world running in (max) realtime -->
+    <include file="$(find hector_gazebo_worlds)/launch/start.launch">
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="world" value="$(arg world_name)" />
+    </include>
+    
+    <!-- Spawn simulated quadrotor uav -->
+    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_uav1_simple.launch" >
+        <arg name="name" default="$(arg name)"/>
+        <!-- <arg name="hover" default="true"/> -->
+    </include>
+    
+    <!-- Start rviz visualization with preset config -->
+    <group if="$(arg rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(env HOME)/cranfield-navigation-gym/cranavgym/ros_interface/rviz_configs/simple.rviz" />
+    </group>
+</launch>
