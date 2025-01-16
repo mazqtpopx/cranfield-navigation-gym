@@ -1,0 +1,22 @@
+ros:
+  # launchfile: "~/cranfield-navigation-gym/cranavgym/ros_interface/launchfiles/DRLNav-v1.launch"
+  launchfile: ""
+  port: "11311"
+  step_pause_time_delta: 0.01
+
+map: 
+  min_xy: [-3,-3]
+  max_xy: [3,3]
+
+camera: 
+  img_width: 160
+  img_height: 160
+  camera_dim: [160, 160, 3]
+
+lidar:
+  lidar_dim: 20
+
+interface:
+  gui_arg: "gui:=true"
+  rviz_arg: "rviz:=true"
+  robot_name_arg: "robot_name:=uav1"

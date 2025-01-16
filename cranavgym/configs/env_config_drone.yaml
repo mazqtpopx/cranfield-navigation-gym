@@ -1,0 +1,31 @@
+#Experimental notes are a field for making notes 
+#unique to each experiment (if required)
+#that will help with understanding the 
+#purpose of the experiment to a user in the future
+experimental_notes : ""
+gym_env_id : ""
+
+scenario_settings:
+  max_episode_steps: 100
+  reward_threshold: 100
+  static_goal: false
+  static_goal_xy: [0,0]
+  static_spawn: false
+  static_spawn_xy: [-3,0]
+  observations:
+    obs_space_type: "lidar" #"lidar", "camera", "dict" ("dict" not tested!!!)
+  reward_type: "alternative" # "original", "alternative"
+
+drl_robot_navigation:
+  camera_noise: true
+  camera_noise_area_size: [3,3]
+  random_camera_noise_area: true #True/false
+  static_camera_noise_area_pos: [0,0]
+  camera_noise_type: "gaussian" # "gaussian", "fail", "random_erase"
+  lidar_noise: true
+  lidar_noise_area_size: [3,3]
+  random_lidar_noise_area: true
+  static_lidar_noise_area_pos: [0,0]
+
+
+

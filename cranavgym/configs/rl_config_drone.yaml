@@ -1,0 +1,37 @@
+#Experimental notes are a field for making notes 
+#unique to each experiment (if required)
+#that will help with understanding the 
+#purpose of the experiment to a user in the future
+experimental_notes : ""
+
+max_training_steps: 100000
+lr: 0.003
+batch_size: 16384
+
+evaluate_only: False
+load_model_path: ""
+
+#"TD3", "PPO", "PPO_LSTM", or "DreamerV3"
+algorithm: "TD3"
+
+log_dir: "~/cranfield-navigation-gym/log_dir/"
+tensorboard_dir: "~/cranfield-navigation-gym/log_dir/"
+
+TD3:
+  policy_type: "MlpPolicy" # CnnPolicy, MlpPolicy, MultiInputPolicy
+  learning_starts: 5000
+  tau: 0.005
+  action_noise: "None"
+  batch_size: 1024 # for camera only! take out from lidar
+
+
+PPO:
+  policy_type: "MlpPolicy"
+  n_steps: 256
+  batch_size: 256
+
+
+PPO_LSTM:
+  policy_type: "MlpPolicy"
+  n_steps: 256
+  batch_size: 256
