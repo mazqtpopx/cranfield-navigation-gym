@@ -25,3 +25,8 @@ register(
     # max_episode_steps=1200,
     # reward_threshold=100.0
 )
+
+register(
+    id="DroneNavigationGDP-v0",
+    entry_point="cranavgym.envs.drone_nav_simple:DroneNavigationSimple",
+)
