@@ -185,7 +185,9 @@ class ROSInterface:
     @robot_position.setter
     def robot_position(self, x, y, quaternion):
         self.__move_robot(x, y, quaternion)
-        # raise NotImplementedError()
+
+    def set_robot_position(self, x, y, quaternion):
+        self.__move_robot(x, y, quaternion)
 
     # @property
     def get_robot_velocity(self):
@@ -229,10 +231,17 @@ class ROSInterface:
         return self.__velodyne_data
 
     def get_camera_data(self):
-        return cv2.resize(self.__camera_data, (self._img_width, self._img_height))
+        # return cv2.resize(self.__camera_data, (self._img_width, self._img_height))
+        # get rid of resizes: these slow the sim down!
+        # Instead define correct size in the xacro
+        return self.__camera_data
 
     def get_collision_status(self):
         return self.__collision_detection
+    
+    def reset_collision_status(self):
+        self.__collision_detection = False
+        return
 
     # -----------------------------------Public Functs-------------------------------------------------
     def reset_camera_noise_area(self, x, y, w, h):
@@ -243,7 +252,7 @@ class ROSInterface:
         w: width
         h: height
         """
-        #xy is the centre of the rectangle 
+        # xy is the centre of the rectangle
         self._camera_noise_area = Rectangle(
             x,
             y,
@@ -260,7 +269,7 @@ class ROSInterface:
         w: width
         h: height
         """
-        #xy is the centre of the rectangle 
+        # xy is the centre of the rectangle
         self._lidar_noise_area = Rectangle(
             x,
             y,
@@ -414,23 +423,23 @@ class ROSInterface:
         If the service call fails, it logs an error message.
         """
 
-        rospy.wait_for_service(
-            "/gazebo/unpause_physics"
-        )  # Wait for service before you try
+        # rospy.wait_for_service(
+        #     "/gazebo/unpause_physics"
+        # )  # Wait for service before you try
         try:
             self.unpause()
         except rospy.ServiceException as e:
             rospy.loginfo("/gazebo/unpause_physics service call failed")
 
-        time.sleep(self.__time_delta)  # propagate state for TIME_DELTA seconds
+        # time.sleep(self.__time_delta)  # propagate state for TIME_DELTA seconds
 
-        rospy.wait_for_service(
-            "/gazebo/pause_physics"
-        )  # Wait for service before you try
-        try:
-            self.pause()
-        except rospy.ServiceException as e:
-            rospy.loginfo("/gazebo/pause_physics service call failed")
+        # rospy.wait_for_service(
+        #     "/gazebo/pause_physics"
+        # )  # Wait for service before you try
+        # try:
+        #     self.pause()
+        # except rospy.ServiceException as e:
+        #     rospy.loginfo("/gazebo/pause_physics service call failed")
 
     def reset_ros(self):
         """
@@ -740,11 +749,15 @@ class ROSInterface:
             noisy_img = self.__generate_noisy_img(img_cv, noise_str=proximity)
 
             # Publish noisy image if inside the rectangle
-            self.__camera_data = cv2.resize(noisy_img, (w, h))
+            # self.__camera_data = cv2.resize(noisy_img, (w, h))
+            # get rid of resizes - define correct w/h in the camera xacro
+            self.__camera_data = noisy_img
             img_to_publish = noisy_img
         else:
             # Publish normal image if outside the rectangle
-            self.__camera_data = cv2.resize(img_cv, (w, h))
+            # self.__camera_data = cv2.resize(img_cv, (w, h))
+            # get rid of resizes - define correct w/h in the camera xacro
+            self.__camera_data = img_cv
             img_to_publish = img_cv
 
         # Convert back to ROS msg - need to add original header!
@@ -759,7 +772,7 @@ class ROSInterface:
         )
 
         # Publish the noisy image (for debugging)
-        self.noisy_image_pub.publish(converted_img)
+        # self.noisy_image_pub.publish(converted_img)
 
     def __generate_noisy_img(self, img, noise_str):
         """

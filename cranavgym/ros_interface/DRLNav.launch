@@ -1,6 +1,6 @@
 <launch>
   <arg name="gui" value="true"/>
-  <arg name="rviz" value="true"/>
+  <arg name="rviz" value="false"/>
   <!-- TD3_i_map for I shaped map or TD3.world for our map -->
   <arg name="world_name" value="$(find multi_robot_scenario)/worlds/TD3.world"/>
 

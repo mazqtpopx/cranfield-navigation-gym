@@ -8,8 +8,20 @@ from typing import Union
 from cranavgym.ros_interface.ros_interface import ROSInterface
 
 import random
+import threading
 
-DISCRETE_ACTIONS = False
+DISCRETE_ACTIONS = True
+
+from squaternion import Quaternion
+import time
+# from scipy.spatial.transform import Rotation
+
+
+def move_forward(x, y, yaw, distance):
+    x_new = x + distance * np.cos(yaw)
+    y_new = y + distance * np.sin(yaw)
+
+    return (x_new, y_new)
 
 
 class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
@@ -86,7 +98,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     def __init__(
         self,
         ros_interface_config,
-        max_episode_steps=50,
+        max_episode_steps=500,
         obs_space="lidar",
         reward_type="alternative",
         camera_noise=False,
@@ -141,7 +153,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
         # -----------------------------------ACTION/OBS SPACE--------------------------------------------
         if DISCRETE_ACTIONS:
-            self.action_sapce = spaces.Discrete(3)
+            self.action_space = spaces.Discrete(4)
         else:
             self.action_space = spaces.Box(
                 np.array([0, -1]).astype(np.float32),
@@ -257,34 +269,105 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     """
 
     # Perform an action and read a new state
+    # def step(self, action):
+    #     # threading.Thread(target=self.ros.unpause(), daemon=True).start()
+    #     # self.ros.unpause()
+    #     # perform actions (set the action to be the velocity of the robot)
+    #     self._perform_action(action)
+
+    #     # self._pause_ROS()
+    #     state, reached_goal = self._get_state(
+    #         self.obs_space, self.goal_reached_threshold, action
+    #     )
+    #     # get reward:
+    #     # -100 if collision
+    #     # +100 if reached reward
+    #     # .... otherwise
+    #     # First, get the collison status
+    #     collided = self.ros.get_collision_status()
+    #     if self.reward_type == "original":
+    #         reward = self._get_reward_original(
+    #             reached_goal, collided, action, min(self.ros.get_velodyne_data)
+    #         )
+    #     elif self.reward_type == "alternative":
+    #         reward = self._get_reward_alternative(reached_goal, collided)
+    #     # check if scenario is done
+    #     terminated, truncated = self._is_done(
+    #         collided, reached_goal, self.current_step, self.max_episode_steps
+    #     )
+
+    #     # should move funct of dist to goal/angle to goal to ros interface?
+    #     dist_to_goal, angle_to_goal = self._get_dist_and_angle_to_goal()
+
+    #     x_vel, y_vel = self.ros.get_robot_velocity()
+    #     info = {
+    #         "x_position": self.ros.robot_position[0],
+    #         "y_position": self.ros.robot_position[1],
+    #         "x_velocity": x_vel,
+    #         "y_velocity": y_vel,
+    #         "dist_to_target": dist_to_goal,
+    #         "angle_to_goal": angle_to_goal,
+    #         "reward": reward,
+    #     }
+    #     if terminated:
+    #         info["terminal_observation"] = state
+
+    #     self.current_step = self.current_step + 1
+
+    #     # self.ros.pause()
+    #     return state, reward, terminated, truncated, info
+
     def step(self, action):
-        # perform actions (set the action to be the velocity of the robot)
+        start_time = time.perf_counter()
+
+        # threading.Thread(target=self.ros.unpause(), daemon=True).start()
+        # self.ros.unpause()
+        
+        sub_start = time.perf_counter()
         self._perform_action(action)
-        self._pause_ROS()
-        state, reached_goal = self._get_state(
-            self.obs_space, self.goal_reached_threshold, action
+        print(f"_perform_action took {time.perf_counter() - sub_start:.8f} seconds")
+
+
+        sub_start = time.perf_counter()
+        state = self._get_state(
+            self.obs_space, action
         )
-        # get reward:
-        # -100 if collision
-        # +100 if reached reward
-        # .... otherwise
-        # First, get the collison status
+        print(f"_get_state took {time.perf_counter() - sub_start:.8f} seconds")
+
+        sub_start = time.perf_counter()
         collided = self.ros.get_collision_status()
+        print(f"get_collision_status took {time.perf_counter() - sub_start:.8f} seconds")
+
+        sub_start = time.perf_counter()
+        dist_to_goal, angle_to_goal = self._get_dist_and_angle_to_goal()
+        # Set the reached goal flag (true if distance to goal is below the threshold)
+        # move to get_state_observation
+        # NB: make sure to use the unnormalized version of dist_to_goal!
+        reached_goal = dist_to_goal < self.goal_reached_threshold
+        print(f"_get_dist_and_angle_to_goal took {time.perf_counter() - sub_start:.8f} seconds")
+
+
+        sub_start = time.perf_counter()
         if self.reward_type == "original":
             reward = self._get_reward_original(
                 reached_goal, collided, action, min(self.ros.get_velodyne_data)
             )
         elif self.reward_type == "alternative":
             reward = self._get_reward_alternative(reached_goal, collided)
-        # check if scenario is done
-        done = self._is_done(
+        print(f"Reward computation took {time.perf_counter() - sub_start:.8f} seconds")
+
+        sub_start = time.perf_counter()
+        terminated, truncated = self._is_done(
             collided, reached_goal, self.current_step, self.max_episode_steps
         )
+        print(f"_is_done took {time.perf_counter() - sub_start:.8f} seconds")
 
-        # should move funct of dist to goal/angle to goal to ros interface?
-        dist_to_goal, angle_to_goal = self._get_dist_and_angle_to_goal()
 
+        sub_start = time.perf_counter()
         x_vel, y_vel = self.ros.get_robot_velocity()
+        print(f"get_robot_velocity took {time.perf_counter() - sub_start:.8f} seconds")
+
+        sub_start = time.perf_counter()
         info = {
             "x_position": self.ros.robot_position[0],
             "y_position": self.ros.robot_position[1],
@@ -294,22 +377,37 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             "angle_to_goal": angle_to_goal,
             "reward": reward,
         }
+        if terminated:
+            info["terminal_observation"] = state
+        print(f"Info dictionary creation took {time.perf_counter() - sub_start:.8f} seconds")
 
         self.current_step = self.current_step + 1
 
-        return state, reward, done, False, info
+        # self.ros.pause()
+        total_time = time.perf_counter() - start_time
+        print(f"Total step execution time: {total_time:.8f} seconds")
+        print(f"\n\n")
 
-    def reset(self, seed=None, options=None):
+        return state, reward, terminated, truncated, info
+
+
+
+    def reset(self, seed=None, options=None, **kwargs):
         super().reset(seed=seed)
+        
         self._reset_ROS()
+        # self.ros.pause()
         self._respawn_robot()
         self._reset_goal()
 
         self._reset_noise_areas()
-        self._pause_ROS()
+
+        self.ros.reset_collision_status()
+        
+
         # Move these inputs to the init
-        state, reached_goal = self._get_state(
-            self.obs_space, self.goal_reached_threshold, [0, 0]
+        state = self._get_state(
+            self.obs_space, [0, 0]
         )
 
         self.current_step = 0
@@ -323,7 +421,11 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             "y_velocity": y_vel,
             "dist_to_target": dist_to_goal,
             "angle_to_goal": angle_to_goal,
+            # "terminal_observation": False,
         }
+        # self.ros.unpause()
+        # time.sleep(0.1)
+        # self._pause_ROS()
 
         return state, info
 
@@ -349,13 +451,32 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     def _perform_action(self, action):
         # Publish the robot action
         if DISCRETE_ACTIONS:
+            pos = self.ros.robot_position
+            x = pos[0]
+            y = pos[1]
+            quat = self.ros.get_robot_quaternion()
+            euler = quat.to_euler(degrees=False)
+            yaw = euler[2]
             if action == 0:
+                # no action
                 return
                 # move forward
             elif action == 1:
+                x_new, y_new = move_forward(x, y, euler[2], 0.1)
+                self.ros.set_robot_position(x_new, y_new, quat)
                 return
                 # move left
             elif action == 2:
+                # x_new, y_new = move_forward(x, y, quat, 0.5)
+                yaw = yaw - 0.3
+                quat_new = Quaternion.from_euler(euler[0], euler[1], yaw)
+                self.ros.set_robot_position(x, y, quat_new)
+                return
+            elif action == 3:
+                # x_new, y_new = move_forward(x, y, quat, 0.5)
+                yaw = yaw + 0.3
+                quat_new = Quaternion.from_euler(euler[0], euler[1], yaw)
+                self.ros.set_robot_position(x, y, quat_new)
                 return
                 # move right
         else:
@@ -376,6 +497,9 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         in order to let the simulation execute the actions
     """
 
+    def unpause(self):
+        self.ros.unpause()
+
     def _pause_ROS(self):
         self.ros.pause_ros()
 
@@ -385,39 +509,43 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     def _close_ROS(self):
         self.ros.close_ros()
 
-    def _get_state(self, obs_space, goal_reached_thereshold, action):
-        # get the lidar data
-        lidar_state = np.array([self.ros.get_velodyne_data()])
-
-        # Calculate robot heading from odometry data
-        robot_x, robot_y = self.ros.robot_position
-        goal_x, goal_y = self.ros.get_goal_position()
-
-        quaternion = self.ros.get_robot_quaternion()
-
-        dist_to_goal, angle_to_goal = self._convert_quaternion_to_angles(
-            quaternion, robot_x, robot_y, goal_x, goal_y
-        )
-
-        camera_state = self.ros.get_camera_data()
-
-        robot_state = [
-            robot_x,
-            robot_y,
-            goal_x,
-            goal_y,
-            dist_to_goal,
-            angle_to_goal,
-            action[0],
-            action[1],
-        ]
-
-        # normalize values between 0-1
-        lidar_state_normalized = self._normalize_lidar(lidar_state)
-        dist_to_goal_normalized = self._normalize_dist_to_goal(dist_to_goal)
-        angle_to_goal_normalized = self._normalize_angle_rad(angle_to_goal)
-
+    def _get_state(self, obs_space, action):
         if obs_space == "lidar":
+
+            #should move out of _get state and instead set these as inputs to
+            #increase lidar proc speed
+            robot_x, robot_y = self.ros.robot_position
+            goal_x, goal_y = self.ros.get_goal_position()
+
+            quaternion = self.ros.get_robot_quaternion()
+
+            dist_to_goal, angle_to_goal = self._convert_quaternion_to_angles(
+                quaternion, robot_x, robot_y, goal_x, goal_y
+            )
+
+
+
+            # get the lidar data
+            lidar_state = np.array([self.ros.get_velodyne_data()])
+            # NB: moved to obs_space lidar so that these are not called for camera obs space
+
+            # Calculate robot heading from odometry data
+
+            robot_state = [
+                robot_x,
+                robot_y,
+                goal_x,
+                goal_y,
+                dist_to_goal,
+                angle_to_goal,
+                action[0],
+                action[1],
+            ]
+
+            # normalize values between 0-1
+            lidar_state_normalized = self._normalize_lidar(lidar_state)
+            dist_to_goal_normalized = self._normalize_dist_to_goal(dist_to_goal)
+            angle_to_goal_normalized = self._normalize_angle_rad(angle_to_goal)
             # state = self._pack_state_lidar_dict(
             #     dist_to_goal, angle_to_goal, lidar_state, action
             # )
@@ -427,18 +555,15 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
                 lidar_state_normalized,
                 action,
             )
-
-        # TODO untested!
         elif obs_space == "camera":
+            camera_state = self.ros.get_camera_data()
             state = self._pack_state_img(camera_state)
+            # state = np.transpose(camera_state, (2, 1, 0))
         elif obs_space == "dict":
             state = self._pack_state_dict(robot_state, lidar_state)
-        # Set the reached goal flag (true if distance to goal is below the threshold)
-        # move to get_state_observation
-        # NB: make sure to use the unnormalized version of dist_to_goal!
-        reached_goal = dist_to_goal < goal_reached_thereshold
 
-        return state, reached_goal
+
+        return state
 
     def _convert_quaternion_to_angles(self, quaternion, pos_x, pos_y, goal_x, goal_y):
         euler = quaternion.to_euler(degrees=False)
@@ -453,7 +578,11 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         dot = skew_x * 1 + skew_y * 0
         mag1 = math.sqrt(math.pow(skew_x, 2) + math.pow(skew_y, 2))
         mag2 = math.sqrt(math.pow(1, 2) + math.pow(0, 2))
-        beta = math.acos(dot / (mag1 * mag2))
+        total_mag = mag1 * mag2
+        if total_mag != 0:
+            beta = math.acos(dot / (mag1 * mag2))
+        else:
+            beta = 0
         if skew_y < 0:
             if skew_x < 0:
                 beta = -beta
@@ -568,14 +697,19 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     def _is_done(
         self, collision_detected, reached_goal, current_step, max_episode_steps
     ):
+        """
+        returns teminated and truncated
+        terminated means: the robot hit a wall or found the goal
+        truncated means: max time steps
+        """
         if collision_detected:
-            return True
+            return True, False
         elif reached_goal:
-            return True
+            return True, False
         elif current_step >= max_episode_steps:
-            return True
+            return False, True
         else:
-            return False
+            return False, False
 
     # def __get_reward(self, target, collision):
     #     if target:
@@ -591,7 +725,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             print("------------------Reached the goal-------------------")
             return 1.0
         elif collision:
-            return -1.0
+            return -0.5
         else:
             return -(1 / self.max_episode_steps)
 
