@@ -1,9 +1,11 @@
 import rospy
-from geometry_msgs.msg import Pose, Point
+from geometry_msgs.msg import Pose, Point, Quaternion
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SpawnModel, DeleteModel
+from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState
 
-from squaternion import Quaternion
+# from squaternion import Quaternion
+# from scipy.spatial.transform import Rotation
+import tf.transformations as t
 
 
 class GazeboModel:
@@ -29,9 +31,12 @@ class GazeboModel:
         self.__delete_model_service = rospy.ServiceProxy(
             "/gazebo/delete_model", DeleteModel
         )
-        self.__set_state = rospy.Publisher(
-            "gazebo/set_model_state", ModelState, queue_size=10
-        )
+        # self.__set_state = rospy.Publisher(
+        #     "gazebo/set_model_state", ModelState, queue_size=10
+        # )
+        self.__set_state = rospy.Publisher("gazebo/set_model_state", ModelState)
+        self.__get_state = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)
+
         self.__spawned_models = []
 
     """
@@ -104,8 +109,39 @@ class GazeboModel:
         state.pose.orientation.y = qy
         state.pose.orientation.z = qz
         state.pose.orientation.w = qw
+
+        state.twist.linear.x = 0.0
+        state.twist.linear.y = 0.0
+        state.twist.linear.z = 0.0
+        state.twist.angular.x = 0.0
+        state.twist.angular.y = 0.0
+        state.twist.angular.z = 0.0
         self.__set_state.publish(state)
         # rospy.sleep(0.1)
+
+    def set_model_velocity(self, model_name, x, y, z, ax, ay, az):
+        state = ModelState()
+        state.model_name = model_name
+
+        current_state = self.get_model_state(model_name)
+        state.pose.position.x = current_state.pose.position.x
+        state.pose.position.y = current_state.pose.position.y
+        state.pose.position.z = current_state.pose.position.z
+        state.pose.orientation.x = current_state.pose.orientation.x
+        state.pose.orientation.y = current_state.pose.orientation.y
+        state.pose.orientation.z = current_state.pose.orientation.z
+        state.pose.orientation.w = current_state.pose.orientation.w
+
+        state.twist.linear.x = x
+        state.twist.linear.y = y
+        state.twist.linear.z = z
+        state.twist.angular.x = ax
+        state.twist.angular.y = ay
+        state.twist.angular.z = az
+        self.__set_state.publish(state)
+
+    def get_model_state(self, model_name):
+        return self.__get_state(model_name=model_name, relative_entity_name="")
 
     def delete_model(self, model_name):
         """

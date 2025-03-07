@@ -6,6 +6,7 @@ import cv2
 import time
 import numpy as np
 import rospy
+from scipy.spatial.transform import Rotation
 from squaternion import Quaternion
 from skimage.util import random_noise
 from cv_bridge import CvBridge
@@ -17,6 +18,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import std_msgs.msg
 from std_srvs.srv import Empty
+
+from std_msgs.msg import Float64
 
 
 from cranavgym.ros_interface.utils.map import Map
@@ -44,6 +47,43 @@ Identifiers:
 
 DISCRETE_ACTIONS = False
 MULTIPLE_CAMERA_NOISE_AREAS = True
+
+from numba import njit
+
+
+@njit
+def quaternion_to_euler(q):
+    x, y, z, w = q[0], q[1], q[2], q[3]
+
+    # Compute roll (x-axis rotation)
+    t0 = 2.0 * (w * x + y * z)
+    t1 = 1.0 - 2.0 * (x * x + y * y)
+    roll = np.arctan2(t0, t1)
+
+    # Compute pitch (y-axis rotation)
+    t2 = 2.0 * (w * y - z * x)
+    t2 = max(min(t2, 1.0), -1.0)  # Clamp to [-1,1]
+    pitch = np.arcsin(t2)
+
+    # Compute yaw (z-axis rotation)
+    t3 = 2.0 * (w * z + x * y)
+    t4 = 1.0 - 2.0 * (y * y + z * z)
+    yaw = np.arctan2(t3, t4)
+
+    return np.array([roll, pitch, yaw])
+
+
+@njit
+def euler_to_quaternion(roll, pitch, yaw):
+    cr, cp, cy = np.cos(np.array([roll, pitch, yaw]) / 2)
+    sr, sp, sy = np.sin(np.array([roll, pitch, yaw]) / 2)
+
+    w = cr * cp * cy + sr * sp * sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+
+    return np.array([x, y, z, w])
 
 
 class ROSInterface:
@@ -133,7 +173,7 @@ class ROSInterface:
         # -----------------------------------INIT VARIABLES--------------------------------------------------
         # init odom and goal positions
         self.__goal_x, self.__goal_y = 0.0, 0.0
-        self.__last_odom = None
+        # self.__last_odom = None
         self.__camera_data = np.zeros((img_width, img_height, 3))
         self.__time_delta = time_delta
 
@@ -174,12 +214,18 @@ class ROSInterface:
     # -----------------------------------Getters + Setters-------------------------------------------------
     @property
     def robot_position(self):
-        if self.__last_odom is None:
-            return 0, 0
+        pos = self.__robot.get_position()
+
         return (
-            self.__last_odom.pose.pose.position.x,
-            self.__last_odom.pose.pose.position.y,
+            pos.pose.position.x,
+            pos.pose.position.y,
         )
+        # if self.__last_odom is None:
+        #     return 0, 0
+        # return (
+        #     self.__last_odom.pose.pose.position.x,
+        #     self.__last_odom.pose.pose.position.y,
+        # )
 
     # not actually used
     @robot_position.setter
@@ -198,12 +244,15 @@ class ROSInterface:
 
     # not actually used
     # @robot_velocity.setter - work out how to do getter/setters?
-    def set_robot_velocity(self, linear_x, angular_z):
-        vel_cmd = Twist()
-        vel_cmd.linear.x = linear_x
-        vel_cmd.angular.z = angular_z
-        self.vel_pub.publish(vel_cmd)
-        self._current_velocity = vel_cmd
+    def set_robot_velocity(self, linear_x, linear_y, angular_z):
+        self.__robot.set_velocity(linear_x, linear_y, 0, 0, 0, angular_z)
+        return
+        # return
+        # vel_cmd = Twist()
+        # vel_cmd.linear.x = linear_x
+        # vel_cmd.angular.z = angular_z
+        # self.vel_pub.publish(vel_cmd)
+        # self._current_velocity = vel_cmd
 
     # archive
     # def set_robot_velocities(self, linear_x, angular_z):
@@ -214,15 +263,39 @@ class ROSInterface:
     #     self._current_velocity = vel_cmd
 
     def get_robot_quaternion(self):
-        if self.__last_odom is None:
+        # if self.__last_odom is None:
+        #     return Quaternion(0, 0, 0, 0)
+        # return Rotation.from_quat([0, 0, 0, 0])
+        # return [0,0,0,0]
+
+        orient = self.__robot.get_position()
+        if orient is None:
             return Quaternion(0, 0, 0, 0)
         quaternion = Quaternion(
-            self.__last_odom.pose.pose.orientation.w,
-            self.__last_odom.pose.pose.orientation.x,
-            self.__last_odom.pose.pose.orientation.y,
-            self.__last_odom.pose.pose.orientation.z,
+            orient.pose.orientation.w,
+            orient.pose.orientation.x,
+            orient.pose.orientation.y,
+            orient.pose.orientation.z,
         )
+        # quaternion = Quaternion(
+        #     self.__last_odom.pose.pose.orientation.w,
+        #     self.__last_odom.pose.pose.orientation.x,
+        #     self.__last_odom.pose.pose.orientation.y,
+        #     self.__last_odom.pose.pose.orientation.z,
+        # )
+        # quaternion = Rotation.from_quat([
+        #     self.__last_odom.pose.pose.orientation.x,
+        #     self.__last_odom.pose.pose.orientation.y,
+        #     self.__last_odom.pose.pose.orientation.z,
+        #     self.__last_odom.pose.pose.orientation.w,
+        # ], scalar_first=False)
         return quaternion
+        # return [
+        #     self.__last_odom.pose.pose.orientation.x,
+        #     self.__last_odom.pose.pose.orientation.y,
+        #     self.__last_odom.pose.pose.orientation.z,
+        #     self.__last_odom.pose.pose.orientation.w,
+        # ]
 
     def get_goal_position(self):
         return self.__goal_x, self.__goal_y
@@ -238,7 +311,7 @@ class ROSInterface:
 
     def get_collision_status(self):
         return self.__collision_detection
-    
+
     def reset_collision_status(self):
         self.__collision_detection = False
         return
@@ -336,6 +409,9 @@ class ROSInterface:
         """
         x, y, angle = self.__static_spawn_x, self.__static_spawn_y, 0.0
         quaternion = Quaternion.from_euler(0.0, 0.0, angle)
+        # quaternion = euler_to_quaternion(0,0,angle)
+        # quaternion = Rotation.from_euler('xyz', [0.0, 0.0, angle], degrees=False)
+        # quaternion = [0,0,0,0]
         self.__move_robot(x, y, quaternion)
 
     def __reset_robot_position_random(self):
@@ -348,7 +424,18 @@ class ROSInterface:
         """
         x, y = self.__map.get_random_point()
         angle = np.random.uniform(-np.pi, np.pi)
+        # quaternion = Rotation.from_euler('xyz', [0.0, 0.0, angle], degrees=False)
         quaternion = Quaternion.from_euler(0.0, 0.0, angle)
+        # quaternion = euler_to_quaternion(0,0,angle)
+
+        if (
+            math.isnan(quaternion[0])
+            or math.isnan(quaternion[1])
+            or math.isnan(quaternion[2])
+            or math.isnan(quaternion[3])
+        ):
+            raise Exception("quaternion is a nan!!!!")
+
         self.__move_robot(x, y, quaternion)
 
     def __reset_goal_position_static(self):
@@ -396,7 +483,7 @@ class ROSInterface:
         """
         self.__goal.move(x, y)
 
-    def __move_robot(self, x, y, quaternion):
+    def __move_robot(self, x, y, quat):
         """
         Moves the robot to the specified position and orientation.
 
@@ -405,7 +492,22 @@ class ROSInterface:
             y (float): The y-coordinate of the target position.
             quaternion (Quaternion): The target orientation represented as a quaternion.
         """
-        self.__robot.move(x, y, quaternion)
+        if isinstance(quat, Quaternion):
+            q = quat
+            # wxyz
+            self.__robot.move(x, y, q[1], q[2], q[3], q[0])
+        elif isinstance(quat, Rotation):
+            q = quat.as_quat()
+            self.__robot.move(x, y, q[0], q[1], q[2], q[3])
+
+            # self.__robot.move(x, y, q[0], q[1], q[2], q[3])
+            # xyzw
+            # self.__robot.move(x, y, q[1], q[2], q[3], q[0])
+            # self.__robot.move(x, y, q[3], q[0], q[1], q[2])
+        else:
+            # assume xyzw
+            q = quat
+            self.__robot.move(x, y, q[0], q[1], q[2], q[3])
 
     # -----------------------------------Standard functs-------------------------------------------------
     # ---------------------------------(pause, close, etc)-------------------------------------------------
@@ -527,9 +629,9 @@ class ROSInterface:
         self.velodyne = rospy.Subscriber(
             "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
         )
-        self.odom = rospy.Subscriber(
-            "/r1/odom", Odometry, self.odom_callback, queue_size=1
-        )
+        # self.odom = rospy.Subscriber(
+        #     "/r1/odom", Odometry, self.odom_callback, queue_size=1
+        # )
 
         # Collision stuff
         self.collision_subscriber = rospy.Subscriber(
@@ -661,14 +763,14 @@ class ROSInterface:
         self.scan_msg.ranges = self.__velodyne_data.tolist()  # Set the range values
         self.noisy_laserscan_pub.publish(self.scan_msg)
 
-    def odom_callback(self, od_data):
-        """
-        Callback function for the odometry data.
+    # def odom_callback(self, od_data):
+    #     """
+    #     Callback function for the odometry data.
 
-        Args:
-            od_data: The odometry data received from the ROS topic.
-        """
-        self.__last_odom = od_data
+    #     Args:
+    #         od_data: The odometry data received from the ROS topic.
+    #     """
+    #     self.__last_odom = od_data
 
     def collision_callback_default(self, contact_states):
         """Collisions Callback
