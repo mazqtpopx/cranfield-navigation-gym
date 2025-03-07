@@ -90,6 +90,8 @@ def evaluate_policy(
     current_episode_infos = []
     episode_values = []
     current_episode_values = []
+    episode_features = []
+    current_episode_features = []
 
     episode_counts = np.zeros(n_envs, dtype="int")
     # Divides episodes among different sub environments in the vector as evenly as possible
@@ -114,20 +116,24 @@ def evaluate_policy(
         # actions, values, log_probs = self.policy(obs_tensor)
 
         # NB: this only works for PPO
-        # with th.no_grad():
-        #     # Convert to pytorch tensor or to TensorDict
-        #     # obs_tensor = obs_as_tensor(observations, "cuda")
-        #     # actions, values, log_probs = model.policy(obs_tensor)
-        #     #convert WHC to CWH
-        #     # print(f"{observations.shape=}")
-        #     obs_cwh = np.transpose(observations, (0,3,2,1))
-        #     # print(f"{obs_cwh.shape=}")
-        #     #get the value, then cast to cpu normal value (from a tensor)
-        #     value = model.policy.predict_values(obs_as_tensor(obs_cwh, "cuda")).item()
-        #     # value = 0
-        #     # print(f"{value=}")
-        value = 0
+        with th.no_grad():
+            # Convert to pytorch tensor or to TensorDict
+            # obs_tensor = obs_as_tensor(observations, "cuda")
+            # actions, values, log_probs = model.policy(obs_tensor)
+            # convert WHC to CWH
+            # print(f"{observations.shape=}")
+            obs_cwh = np.transpose(observations, (0, 3, 2, 1))
+            # print(f"{obs_cwh.shape=}")
+            # get the value, then cast to cpu normal value (from a tensor)
+            features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))[0]
+            print(f"{features=}")
+            print(f"{features.shape=}")
+            value = model.policy.predict_values(obs_as_tensor(obs_cwh, "cuda")).item()
+            # value = 0
+            # print(f"{value=}")
+        # value = 0
         current_episode_values.append(value)
+        current_episode_features.append(features)
 
         # params = model.get_parameters()
         # for key, value in params.items():
@@ -163,6 +169,7 @@ def evaluate_policy(
                             episode_lengths.append(info["episode"]["l"])
                             episode_infos.append(current_episode_infos)
                             episode_values.append(current_episode_values)
+                            episode_features.append(current_episode_features)
                             current_episode_infos = []
                             # Only increment at the real end of an episode
                             episode_counts[i] += 1
@@ -186,5 +193,11 @@ def evaluate_policy(
             f"{mean_reward:.2f} < {reward_threshold:.2f}"
         )
     if return_episode_rewards:
-        return episode_rewards, episode_lengths, episode_infos, episode_values
+        return (
+            episode_rewards,
+            episode_lengths,
+            episode_infos,
+            episode_values,
+            episode_features,
+        )
     return mean_reward, std_reward

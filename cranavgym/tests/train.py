@@ -7,7 +7,7 @@ import subprocess
 import numpy as np
 from datetime import datetime
 
-
+import stable_baselines3
 from stable_baselines3 import TD3, PPO
 from stable_baselines3.common.noise import (
     NormalActionNoise,
@@ -21,7 +21,9 @@ from evaluate_policy import (
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 
+
 from sb3_contrib.ppo_recurrent import RecurrentPPO
+
 
 # load config
 import yaml
@@ -141,7 +143,26 @@ def main(env_config, ros_config, rl_config, run_name):
 
     # env = Monitor(env, log_dir)
 
-    env = DummyVecEnv([lambda: make_vec_env(env_config, ros_config, log_dir)])
+    # env = stable_baselines3.common.atari_wrappers.MaxAndSkipEnv(env, skip=4)
+    env = make_vec_env(env_config, ros_config, log_dir)
+    env = gym.wrappers.RecordVideo(
+        env, f"{log_dir}/videos/{run_name}", video_length=1000
+    )
+    # env = stable_baselines3.common.atari_wrappers.MaxAndSkipEnv(env, skip=4)
+    # env = gym.wrappers.GrayScaleObservation(env)
+    # env = gym.wrappers.FrameStack(env, 4)
+
+    env = gym.wrappers.GrayscaleObservation(env)
+    env = gym.wrappers.FrameStackObservation(env, 4)
+    new_obs_space = gym.spaces.Box(low=0, high=255, shape=(4, 160, 160), dtype=np.uint8)
+    env = gym.wrappers.TransformObservation(
+        env, lambda obs: np.array(obs), observation_space=new_obs_space
+    )
+
+    # env = gym.wrappers.FrameStack(env, 4)
+    env = DummyVecEnv([lambda: env])
+
+    # env = DummyVecEnv([lambda: make_vec_env(env_config, ros_config, log_dir)])
 
     # env = VecVideoRecorder(
     #     env,
@@ -210,9 +231,15 @@ def main(env_config, ros_config, rl_config, run_name):
 
 
 def evaluate(model, env, log_dir):
-    n_eval_episodes = 100
+    n_eval_episodes = 400
     print(f"Finished training. Starting evaluation")
-    episode_rewards, episode_lengths, episode_infos, episode_values = evaluate_policy(
+    (
+        episode_rewards,
+        episode_lengths,
+        episode_infos,
+        episode_values,
+        episode_features,
+    ) = evaluate_policy(
         model,
         env,
         n_eval_episodes=n_eval_episodes,
@@ -231,8 +258,13 @@ def evaluate(model, env, log_dir):
 
     rows = []
     i = 0
+    # make dir to store the latent features
+    os.makedirs(os.path.join(log_dir, "lf"), exist_ok=True)
     for ep in range(n_eval_episodes):
         for step in range(episode_lengths[ep]):
+            lf_name = f"latent_features{i}.npy"
+            lf = episode_features[ep][step].detach().cpu().numpy()
+            latent_features_name = np.save(os.path.join(log_dir, f"lf/{lf_name}"), lf)
             data_step = {
                 "episode": ep,
                 "x_position": episode_infos[ep][step][0]["x_position"],
@@ -243,6 +275,7 @@ def evaluate(model, env, log_dir):
                 "dist_to_target": episode_infos[ep][step][0]["dist_to_target"],
                 "angle_to_goal": episode_infos[ep][step][0]["angle_to_goal"],
                 "value": episode_values[ep][step],
+                "latent_features_name": latent_features_name,
             }
             # df.loc[i] = pd.concat([df, pd.DataFrame([data_step])])
             rows.append(data_step)
@@ -259,6 +292,7 @@ def evaluate(model, env, log_dir):
             "dist_to_target",
             "angle_to_goal",
             "value",
+            "latent_features_name",
         ],
     )
     df.to_pickle(os.path.join(log_dir, "evaluation_results_raw.pkl"))
@@ -442,11 +476,11 @@ def setup_TD3_camera(env, rl_config, tensorboard_dir):
         )
     else:
         model = TD3(
-            "CnnPolicy",  # rl_config.TD3.policy_type,
+            "CnnPolicy",
             env,
             learning_rate=float(rl_config.lr),
             policy_kwargs=policy_kwargs,
-            buffer_size=1000,
+            buffer_size=10000,
             learning_starts=float(rl_config.TD3.learning_starts),
             tau=float(rl_config.TD3.tau),
             batch_size=int(rl_config.TD3.batch_size),
@@ -462,7 +496,7 @@ def setup_TD3_camera(env, rl_config, tensorboard_dir):
 def setup_PPO_camera(env, rl_config, tensorboard_dir):
     policy_kwargs = dict(
         features_extractor_class=CustomCNN,
-        features_extractor_kwargs=dict(features_dim=256),
+        features_extractor_kwargs=dict(features_dim=512),
     )
     if rl_config.load_model_path is not (None or ""):
         print(f"Loading PPO, camera model, from {rl_config.load_model_path}")

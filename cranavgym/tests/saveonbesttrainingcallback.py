@@ -4,6 +4,9 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 
+from std_srvs.srv import Empty
+import rospy
+
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     """
@@ -23,6 +26,8 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         self.save_path = os.path.join(save_dir, "best_model")
         self.save_latest_path = os.path.join(save_dir, "last_model")
         self.best_mean_reward = -np.inf
+        self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
+        self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
     def _init_callback(self) -> None:
         # Create folder if needed
@@ -31,6 +36,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.check_freq == 0:
+            self.pause()
             # save latest model
             self.model.save(self.save_latest_path)
             # Retrieve training reward
@@ -51,5 +57,6 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                     if self.verbose >= 1:
                         print(f"Saving new best model to {self.save_path}")
                     self.model.save(self.save_path)
+            self.unpause()
 
         return True
