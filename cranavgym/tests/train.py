@@ -152,24 +152,21 @@ def main(env_config, ros_config, rl_config, run_name):
     # env = gym.wrappers.GrayScaleObservation(env)
     # env = gym.wrappers.FrameStack(env, 4)
 
-    env = gym.wrappers.GrayscaleObservation(env)
-    env = gym.wrappers.FrameStackObservation(env, 4)
-    new_obs_space = gym.spaces.Box(low=0, high=255, shape=(4, 160, 160), dtype=np.uint8)
-    env = gym.wrappers.TransformObservation(
-        env, lambda obs: np.array(obs), observation_space=new_obs_space
-    )
+    if rl_config.frame_stack:
+        print(f"{bcolors.WARNING}---------------------FRAME STACK IS ENABLED-------------------------")
+        print(f"{bcolors.WARNING}Only enable this option if you know what you are doing{bcolors.ENDC}")
+        env = gym.wrappers.GrayscaleObservation(env)
+        env = gym.wrappers.FrameStackObservation(env, 4)
+        new_obs_space = gym.spaces.Box(low=0, high=255, shape=(4, 160, 160), dtype=np.uint8)
+        env = gym.wrappers.TransformObservation(
+            env, lambda obs: np.array(obs), observation_space=new_obs_space
+        )
+        # env = gym.wrappers.FrameStack(env, 4) #NB this line can work in earlier versions of SB3
+        env = DummyVecEnv([lambda: env])
+    else:
+        print(f"{bcolors.OKGREEN}---------------------FRAME STACK IS DISABLED-------------------------{bcolors.ENDC}")
 
-    # env = gym.wrappers.FrameStack(env, 4)
-    env = DummyVecEnv([lambda: env])
 
-    # env = DummyVecEnv([lambda: make_vec_env(env_config, ros_config, log_dir)])
-
-    # env = VecVideoRecorder(
-    #     env,
-    #     video_dir,
-    #     record_video_trigger=lambda x: x % 3000 == 0,
-    #     video_length=int(env_config.scenario_settings.max_episode_steps) * 4,
-    # )
 
     if env_config.scenario_settings.obs_space == "lidar":
         if rl_config.algorithm == "TD3":
@@ -374,7 +371,7 @@ def setup_TD3(env, rl_config, tensorboard_dir):
         mean=np.zeros(n_actions), sigma=0.3 * np.ones(n_actions)
     )
 
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         model = TD3.load(
             rl_config.load_model_path,
             env,
@@ -402,7 +399,7 @@ def setup_TD3(env, rl_config, tensorboard_dir):
 
 def setup_PPO(env, rl_config, tensorboard_dir):
 
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         model = PPO.load(
             rl_config.load_model_path,
             env,
@@ -427,7 +424,7 @@ def setup_PPO(env, rl_config, tensorboard_dir):
 
 
 def setup_PPO_LSTM(env, rl_config, tensorboard_dir):
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         model = RecurrentPPO.load(
             rl_config.load_model_path,
             env,
@@ -466,7 +463,7 @@ def setup_TD3_camera(env, rl_config, tensorboard_dir):
         features_extractor_kwargs=dict(features_dim=256),
     )
 
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         model = TD3.load(
             rl_config.load_model_path,
             env,
@@ -498,7 +495,7 @@ def setup_PPO_camera(env, rl_config, tensorboard_dir):
         features_extractor_class=CustomCNN,
         features_extractor_kwargs=dict(features_dim=512),
     )
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         print(f"Loading PPO, camera model, from {rl_config.load_model_path}")
         model = PPO.load(
             rl_config.load_model_path,
@@ -528,7 +525,7 @@ def setup_PPO_LSTM_camera(env, rl_config, tensorboard_dir):
         features_extractor_kwargs=dict(features_dim=256),
     )
 
-    if rl_config.load_model_path is not (None or ""):
+    if rl_config.load_model_path is not None or "":
         model = RecurrentPPO.load(
             rl_config.load_model_path,
             env,
@@ -662,6 +659,9 @@ if __name__ == "__main__":
     parser.add_argument("--static-goal", action="store_true")
     parser.add_argument("--no-static-goal", dest="static_goal", action="store_false")
 
+    parser.add_argument("--frame-stack", action="store_true")
+    parser.add_argument("--no-frame-stack", dest="frame_stack", action="store_false")
+
     parser.add_argument("-camera-noise-size", "--camera_noise_size", type=int)
     parser.add_argument("-lidar-noise-size", "--lidar_noise_size", type=int)
     parser.add_argument("-max-training-steps", "--max_training_steps", type=int)
@@ -724,25 +724,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # make sure this is first!!!!
-    if args.evaluate_only:
+    if args.evaluate_only is not None:
         # For evaluation, load evaluation configs - they should be in different dir!
         env_config, ros_config, rl_config = load_evaluation_configs()
         rl_config.evaluate_only = args.evaluate_only
 
     # print(f"1{rl_config=}")
     # overwrite the configs
-    if args.learning_rate:
+    if args.learning_rate is not None:
         rl_config.lr = args.learning_rate
 
-    if args.lidar_noise:
+    if args.lidar_noise is not None:
         env_config.drl_robot_navigation.lidar_noise = args.lidar_noise
-    if args.lidar_noise_size:
+    if args.lidar_noise_size is not None:
         env_config.drl_robot_navigation.lidar_noise_area_size[0] = args.lidar_noise_size
         env_config.drl_robot_navigation.lidar_noise_area_size[1] = args.lidar_noise_size
 
-    if args.camera_noise:
+    if args.camera_noise is not None:
         env_config.drl_robot_navigation.camera_noise = args.camera_noise
-    if args.camera_noise_size:
+    if args.camera_noise_size is not None:
         env_config.drl_robot_navigation.camera_noise_area_size[0] = (
             args.camera_noise_size
         )
@@ -750,35 +750,41 @@ if __name__ == "__main__":
             args.camera_noise_size
         )
 
-    if args.static_spawn:
+    if args.static_spawn is not None:
         env_config.scenario_settings.static_spawn = args.static_spawn
 
-    if args.static_goal:
+    print(f"Static goal = {args.static_goal}")
+    if args.static_goal is not None:
+        print(f"Static goal = {args.static_goal}")
         env_config.scenario_settings.static_goal = args.static_goal
+        print(f"Static goal = {env_config.scenario_settings.static_goal}")
 
-    if args.map_bounds:
+    if args.map_bounds is not None:
         ros_config.map.min_xy[0] = -args.map_bounds
         ros_config.map.min_xy[1] = -args.map_bounds
         ros_config.map.max_xy[0] = args.map_bounds
         ros_config.map.max_xy[1] = args.map_bounds
 
-    if args.max_training_steps:
+    if args.max_training_steps is not None:
         rl_config.max_training_steps = args.max_training_steps
 
-    if args.observation_space:
+    if args.observation_space is not None:
         env_config.scenario_settings.obs_space = args.observation_space
 
-    if args.rl_algorithm:
+    if args.rl_algorithm is not None:
         rl_config.algorithm = args.rl_algorithm
 
-    if args.algo_notes:
+    if args.algo_notes is not None:
         rl_config.experimental_notes = args.algo_notes
 
-    if args.env_notes:
+    if args.env_notes is not None:
         env_config.experimental_notes = args.env_notes
 
-    if args.load_model_path:
+    if args.load_model_path is not None or "":
         rl_config.load_model_path = args.load_model_path
+
+    if args.frame_stack is not None:
+        rl_config.frame_stack = args.frame_stack
 
     # print(f"2{rl_config=}")
 
