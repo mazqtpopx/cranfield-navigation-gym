@@ -495,6 +495,7 @@ def setup_PPO_camera(env, rl_config, tensorboard_dir):
         features_extractor_class=CustomCNN,
         features_extractor_kwargs=dict(features_dim=512),
     )
+    print(f"{rl_config=}")
     if rl_config.load_model_path is not None or "":
         print(f"Loading PPO, camera model, from {rl_config.load_model_path}")
         model = PPO.load(
@@ -671,6 +672,7 @@ if __name__ == "__main__":
         "-load-model-path",
         "--load_model_path",
         type=str,
+        default="",
         help="Full path to the model",
     )
 
@@ -780,15 +782,11 @@ if __name__ == "__main__":
     if args.env_notes is not None:
         env_config.experimental_notes = args.env_notes
 
-    if args.load_model_path is not None or "":
+    if args.load_model_path is not None:
         rl_config.load_model_path = args.load_model_path
 
     if args.frame_stack is not None:
         rl_config.frame_stack = args.frame_stack
-
-    # print(f"2{rl_config=}")
-
-    # print(f"{get_dirs(rl_config)=}")
 
     run_name = ""
     if args.run_name:
