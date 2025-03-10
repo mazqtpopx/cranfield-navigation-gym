@@ -726,7 +726,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # make sure this is first!!!!
-    if args.evaluate_only is not None:
+    if args.evaluate_only:
+        print(f"{bcolors.WARNING} -------------------------EVALUATION ONLY IS ENABLED!-----------------")
+        print(f" Loading eval configs.{bcolors.ENDC}")
         # For evaluation, load evaluation configs - they should be in different dir!
         env_config, ros_config, rl_config = load_evaluation_configs()
         rl_config.evaluate_only = args.evaluate_only
