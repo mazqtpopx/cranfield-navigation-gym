@@ -371,7 +371,7 @@ def setup_TD3(env, rl_config, tensorboard_dir):
         mean=np.zeros(n_actions), sigma=0.3 * np.ones(n_actions)
     )
 
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         model = TD3.load(
             rl_config.load_model_path,
             env,
@@ -399,7 +399,7 @@ def setup_TD3(env, rl_config, tensorboard_dir):
 
 def setup_PPO(env, rl_config, tensorboard_dir):
 
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         model = PPO.load(
             rl_config.load_model_path,
             env,
@@ -424,7 +424,7 @@ def setup_PPO(env, rl_config, tensorboard_dir):
 
 
 def setup_PPO_LSTM(env, rl_config, tensorboard_dir):
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         model = RecurrentPPO.load(
             rl_config.load_model_path,
             env,
@@ -463,7 +463,7 @@ def setup_TD3_camera(env, rl_config, tensorboard_dir):
         features_extractor_kwargs=dict(features_dim=256),
     )
 
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         model = TD3.load(
             rl_config.load_model_path,
             env,
@@ -496,7 +496,7 @@ def setup_PPO_camera(env, rl_config, tensorboard_dir):
         features_extractor_kwargs=dict(features_dim=512),
     )
     print(f"{rl_config=}")
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         print(f"Loading PPO, camera model, from {rl_config.load_model_path}")
         model = PPO.load(
             rl_config.load_model_path,
@@ -526,7 +526,7 @@ def setup_PPO_LSTM_camera(env, rl_config, tensorboard_dir):
         features_extractor_kwargs=dict(features_dim=256),
     )
 
-    if rl_config.load_model_path is not None or "":
+    if rl_config.load_model_path is not (None or ""):
         model = RecurrentPPO.load(
             rl_config.load_model_path,
             env,
