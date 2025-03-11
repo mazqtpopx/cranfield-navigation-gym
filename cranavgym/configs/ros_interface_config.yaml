@@ -1,7 +1,7 @@
 ros:
   launchfile: "~/cranfield-navigation-gym/cranavgym/ros_interface/DRLNav.launch"
   port: "11311"
-  step_pause_time_delta: 0.05
+  step_pause_time_delta: 0.000001 # 0.005 this works ok for 5 real time, 1000 hz
 
 map: 
   min_xy: [-5,-5]

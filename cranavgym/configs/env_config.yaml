@@ -5,16 +5,16 @@
 experimental_notes : ""
 
 scenario_settings:
-  max_steps: 50
+  max_steps: 5000
   reward_threshold: 100 # is this needed?
-  obs_space: "lidar" #"lidar", "camera", "dict"
+  obs_space: "camera" #"lidar", "camera", "dict"
   static_goal: true
   static_goal_xy: [0,0]
   static_spawn: false
   static_spawn_xy: [-3,0]
 
 drl_robot_navigation:
-  camera_noise: true
+  camera_noise: false
   camera_noise_area_size: [3,3]
   random_camera_noise_area: false #True/false
   static_camera_noise_area_pos: [0,0]
