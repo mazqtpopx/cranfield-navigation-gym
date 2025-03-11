@@ -37,7 +37,9 @@ class GazeboModel:
         self.__set_state = rospy.Publisher("gazebo/set_model_state", ModelState)
         self.__get_state = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)
 
+
         self.__spawned_models = []
+
 
     """
     This needs to be ... 
@@ -110,12 +112,12 @@ class GazeboModel:
         state.pose.orientation.z = qz
         state.pose.orientation.w = qw
 
-        state.twist.linear.x = 0.0
-        state.twist.linear.y = 0.0
-        state.twist.linear.z = 0.0
-        state.twist.angular.x = 0.0
-        state.twist.angular.y = 0.0
-        state.twist.angular.z = 0.0
+        # state.twist.linear.x = 0.0
+        # state.twist.linear.y = 0.0
+        # state.twist.linear.z = 0.0
+        # state.twist.angular.x = 0.0
+        # state.twist.angular.y = 0.0
+        # state.twist.angular.z = 0.0
         self.__set_state.publish(state)
         # rospy.sleep(0.1)
 
@@ -140,6 +142,12 @@ class GazeboModel:
         state.twist.angular.z = az
         self.__set_state.publish(state)
 
+    # def model_states_callback(self, msg):
+    #     idx = msg.name.index("r1")
+    #     self.pose = msg.pose[idx]
+    #     self.twist = msg.twist[idx]
+
+    # I'm gonna keep here but its slow! use subscriber instead
     def get_model_state(self, model_name):
         return self.__get_state(model_name=model_name, relative_entity_name="")
 

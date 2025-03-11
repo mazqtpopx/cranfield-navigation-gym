@@ -153,20 +153,26 @@ def main(env_config, ros_config, rl_config, run_name):
     # env = gym.wrappers.FrameStack(env, 4)
 
     if rl_config.frame_stack:
-        print(f"{bcolors.WARNING}---------------------FRAME STACK IS ENABLED-------------------------")
-        print(f"{bcolors.WARNING}Only enable this option if you know what you are doing{bcolors.ENDC}")
+        print(
+            f"{bcolors.WARNING}---------------------FRAME STACK IS ENABLED-------------------------"
+        )
+        print(
+            f"{bcolors.WARNING}Only enable this option if you know what you are doing{bcolors.ENDC}"
+        )
         env = gym.wrappers.GrayscaleObservation(env)
         env = gym.wrappers.FrameStackObservation(env, 4)
-        new_obs_space = gym.spaces.Box(low=0, high=255, shape=(4, 160, 160), dtype=np.uint8)
+        new_obs_space = gym.spaces.Box(
+            low=0, high=255, shape=(4, 160, 160), dtype=np.uint8
+        )
         env = gym.wrappers.TransformObservation(
             env, lambda obs: np.array(obs), observation_space=new_obs_space
         )
         # env = gym.wrappers.FrameStack(env, 4) #NB this line can work in earlier versions of SB3
         env = DummyVecEnv([lambda: env])
     else:
-        print(f"{bcolors.OKGREEN}---------------------FRAME STACK IS DISABLED-------------------------{bcolors.ENDC}")
-
-
+        print(
+            f"{bcolors.OKGREEN}---------------------FRAME STACK IS DISABLED-------------------------{bcolors.ENDC}"
+        )
 
     if env_config.scenario_settings.obs_space == "lidar":
         if rl_config.algorithm == "TD3":
@@ -228,7 +234,7 @@ def main(env_config, ros_config, rl_config, run_name):
 
 
 def evaluate(model, env, log_dir):
-    n_eval_episodes = 400
+    n_eval_episodes = 50
     print(f"Finished training. Starting evaluation")
     (
         episode_rewards,
@@ -727,7 +733,9 @@ if __name__ == "__main__":
 
     # make sure this is first!!!!
     if args.evaluate_only:
-        print(f"{bcolors.WARNING} -------------------------EVALUATION ONLY IS ENABLED!-----------------")
+        print(
+            f"{bcolors.WARNING} -------------------------EVALUATION ONLY IS ENABLED!-----------------"
+        )
         print(f" Loading eval configs.{bcolors.ENDC}")
         # For evaluation, load evaluation configs - they should be in different dir!
         env_config, ros_config, rl_config = load_evaluation_configs()

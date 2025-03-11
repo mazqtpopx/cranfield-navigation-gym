@@ -2,7 +2,8 @@
   <arg name="gui" value="true"/>
   <arg name="rviz" value="false"/>
   <!-- TD3_i_map for I shaped map or TD3.world for our map -->
-  <arg name="world_name" value="$(find multi_robot_scenario)/worlds/TD3.world"/>
+  <!-- <arg name="world_name" value="$(find multi_robot_scenario)/worlds/TD3.world"/> -->
+  <arg name="world_name" value="/home/leo/ros-rl-env/catkin_ws/src/hector_quadrotor_noetic/hector_gazebo/hector_gazebo_worlds/worlds/rolling_landscape_120m.world"/>
 
     <!-- Gazebo  -->
     <include file="$(find multi_robot_scenario)/launch/empty_world.launch">

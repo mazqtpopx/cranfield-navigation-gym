@@ -340,7 +340,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
     # Perform an action and read a new state
     def step(self, action):
-        self.ros.set_robot_velocity(0.0, 0.0, 0.0)
+        # self.ros.set_robot_velocity(0.0, 0.0, 0.0)
         # threading.Thread(target=self.ros.unpause(), daemon=True).start()
         # self.ros.unpause()
         # perform actions (set the action to be the velocity of the robot)
@@ -349,6 +349,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         # self._pause_ROS()
 
         state = self._get_state(self.obs_space, action)
+
         # get reward:
         # -100 if collision
         # +100 if reached reward
@@ -357,6 +358,9 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         collided = self.ros.get_collision_status()
 
         dist_to_goal, angle_to_goal = self._get_dist_and_angle_to_goal()
+
+        # dist_to_goal = 4
+        # angle_to_goal = 0
 
         #     # Set the reached goal flag (true if distance to goal is below the threshold)
         #     # move to get_state_observation
@@ -468,7 +472,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     def reset(self, seed=None, options=None, **kwargs):
         super().reset(seed=seed)
 
-        self.ros.set_robot_velocity(0.0, 0.0, 0.0)
+        # self.ros.set_robot_velocity(0.0, 0.0, 0.0)
         self._reset_ROS()
         self.ros.pause()
         self._respawn_robot()
@@ -537,11 +541,16 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             yaw = euler[2]
             if action == 0:
                 # no action
-                self.ros.set_robot_velocity(0.0, 0.0, 0.0)
+                # self.ros.set_robot_velocity(0.0, 0.0, 0.0)
                 return
                 # move forward
             elif action == 1:
-                x_new, y_new = move_forward(x, y, euler[2], 0.1)
+                # default for map
+                # x_new, y_new = move_forward(x, y, euler[2], 0.1)
+
+                # for flight arena
+                x_new, y_new = move_forward(x, y, euler[2], 0.3)
+
                 # x_new, y_new = move_forward(x, y, euler[2], 1.0)
                 self.ros.set_robot_position(x_new, y_new, quat)
 

@@ -20,6 +20,7 @@ import std_msgs.msg
 from std_srvs.srv import Empty
 
 from std_msgs.msg import Float64
+from geometry_msgs.msg import Pose
 
 
 from cranavgym.ros_interface.utils.map import Map
@@ -173,6 +174,7 @@ class ROSInterface:
         # -----------------------------------INIT VARIABLES--------------------------------------------------
         # init odom and goal positions
         self.__goal_x, self.__goal_y = 0.0, 0.0
+        self.robot_pose = None
         # self.__last_odom = None
         self.__camera_data = np.zeros((img_width, img_height, 3))
         self.__time_delta = time_delta
@@ -214,12 +216,15 @@ class ROSInterface:
     # -----------------------------------Getters + Setters-------------------------------------------------
     @property
     def robot_position(self):
-        pos = self.__robot.get_position()
+        # pos = self.__robot.get_position()
 
-        return (
-            pos.pose.position.x,
-            pos.pose.position.y,
-        )
+        if self.robot_pose is not None:
+            return (
+                self.robot_pose.position.x,
+                self.robot_pose.position.y,
+            )
+        else:
+            return (0, 0)
         # if self.__last_odom is None:
         #     return 0, 0
         # return (
@@ -234,6 +239,7 @@ class ROSInterface:
 
     def set_robot_position(self, x, y, quaternion):
         self.__move_robot(x, y, quaternion)
+        return
 
     # @property
     def get_robot_velocity(self):
@@ -263,20 +269,15 @@ class ROSInterface:
     #     self._current_velocity = vel_cmd
 
     def get_robot_quaternion(self):
-        # if self.__last_odom is None:
-        #     return Quaternion(0, 0, 0, 0)
-        # return Rotation.from_quat([0, 0, 0, 0])
-        # return [0,0,0,0]
-
-        orient = self.__robot.get_position()
-        if orient is None:
+        if self.robot_pose is None:
             return Quaternion(0, 0, 0, 0)
         quaternion = Quaternion(
-            orient.pose.orientation.w,
-            orient.pose.orientation.x,
-            orient.pose.orientation.y,
-            orient.pose.orientation.z,
+            self.robot_pose.orientation.w,
+            self.robot_pose.orientation.x,
+            self.robot_pose.orientation.y,
+            self.robot_pose.orientation.z,
         )
+        return quaternion
         # quaternion = Quaternion(
         #     self.__last_odom.pose.pose.orientation.w,
         #     self.__last_odom.pose.pose.orientation.x,
@@ -289,7 +290,7 @@ class ROSInterface:
         #     self.__last_odom.pose.pose.orientation.z,
         #     self.__last_odom.pose.pose.orientation.w,
         # ], scalar_first=False)
-        return quaternion
+        # return quaternion
         # return [
         #     self.__last_odom.pose.pose.orientation.x,
         #     self.__last_odom.pose.pose.orientation.y,
@@ -632,6 +633,9 @@ class ROSInterface:
         # self.odom = rospy.Subscriber(
         #     "/r1/odom", Odometry, self.odom_callback, queue_size=1
         # )
+        self.robot_pose_subscriber = rospy.Subscriber(
+            "/robot_pose", Pose, self.robot_pose_callback
+        )
 
         # Collision stuff
         self.collision_subscriber = rospy.Subscriber(
@@ -763,6 +767,9 @@ class ROSInterface:
         self.scan_msg.ranges = self.__velodyne_data.tolist()  # Set the range values
         self.noisy_laserscan_pub.publish(self.scan_msg)
 
+
+    def robot_pose_callback(self, msg):
+        self.robot_pose = msg
     # def odom_callback(self, od_data):
     #     """
     #     Callback function for the odometry data.
