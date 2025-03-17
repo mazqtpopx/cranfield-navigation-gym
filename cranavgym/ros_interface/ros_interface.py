@@ -449,7 +449,7 @@ class ROSInterface:
         the new coordinates.
         """
         goal_x, goal_y = self.__static_goal_x, self.__static_goal_y
-        self.__move_goal(goal_x, goal_y)
+        self.__move_goal(goal_x, goal_y, False)
         self.__goal_x, self.__goal_y = goal_x, goal_y
 
     def __reset_goal_position_random(self):
@@ -471,10 +471,10 @@ class ROSInterface:
                 (robot_x - goal_x) ** 2 + (robot_y - goal_y) ** 2
             )
 
-        self.__move_goal(goal_x, goal_y)
+        self.__move_goal(goal_x, goal_y, True)
         self.__goal_x, self.__goal_y = goal_x, goal_y
 
-    def __move_goal(self, x, y):
+    def __move_goal(self, x, y, random_angle):
         """
         Moves the goal to the specified coordinates.
 
@@ -482,7 +482,7 @@ class ROSInterface:
             x (float): The x-coordinate of the goal.
             y (float): The y-coordinate of the goal.
         """
-        self.__goal.move(x, y)
+        self.__goal.move(x, y, random_angle)
 
     def __move_robot(self, x, y, quat):
         """
@@ -767,9 +767,9 @@ class ROSInterface:
         self.scan_msg.ranges = self.__velodyne_data.tolist()  # Set the range values
         self.noisy_laserscan_pub.publish(self.scan_msg)
 
-
     def robot_pose_callback(self, msg):
         self.robot_pose = msg
+
     # def odom_callback(self, od_data):
     #     """
     #     Callback function for the odometry data.

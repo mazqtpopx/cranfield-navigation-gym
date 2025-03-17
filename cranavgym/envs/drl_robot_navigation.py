@@ -549,7 +549,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
                 # x_new, y_new = move_forward(x, y, euler[2], 0.1)
 
                 # for flight arena
-                x_new, y_new = move_forward(x, y, euler[2], 0.3)
+                x_new, y_new = move_forward(x, y, euler[2], 0.1)
 
                 # x_new, y_new = move_forward(x, y, euler[2], 1.0)
                 self.ros.set_robot_position(x_new, y_new, quat)
