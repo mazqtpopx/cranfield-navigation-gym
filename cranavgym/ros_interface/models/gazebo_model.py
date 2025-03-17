@@ -1,5 +1,5 @@
 import rospy
-from geometry_msgs.msg import Pose, Point, Quaternion
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist 
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState
 
@@ -31,11 +31,11 @@ class GazeboModel:
         self.__delete_model_service = rospy.ServiceProxy(
             "/gazebo/delete_model", DeleteModel
         )
-        # self.__set_state = rospy.Publisher(
-        #     "gazebo/set_model_state", ModelState, queue_size=10
-        # )
-        self.__set_state = rospy.Publisher("gazebo/set_model_state", ModelState)
-        self.__get_state = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)
+        self.__set_state = rospy.Publisher(
+            "gazebo/set_model_state", ModelState, queue_size=10
+        )
+        # self.__set_state = rospy.Publisher("gazebo/set_model_state", ModelState)
+        # self.__get_state = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)
 
 
         self.__spawned_models = []
@@ -121,18 +121,18 @@ class GazeboModel:
         self.__set_state.publish(state)
         # rospy.sleep(0.1)
 
-    def set_model_velocity(self, model_name, x, y, z, ax, ay, az):
+    def set_model_velocity(self, model_name, current_state, x, y, z, ax, ay, az):
         state = ModelState()
         state.model_name = model_name
 
-        current_state = self.get_model_state(model_name)
-        state.pose.position.x = current_state.pose.position.x
-        state.pose.position.y = current_state.pose.position.y
-        state.pose.position.z = current_state.pose.position.z
-        state.pose.orientation.x = current_state.pose.orientation.x
-        state.pose.orientation.y = current_state.pose.orientation.y
-        state.pose.orientation.z = current_state.pose.orientation.z
-        state.pose.orientation.w = current_state.pose.orientation.w
+        # current_state = self.get_model_state(model_name)
+        state.pose.position.x = current_state.position.x
+        state.pose.position.y = current_state.position.y
+        state.pose.position.z = current_state.position.z
+        state.pose.orientation.x = current_state.orientation.x
+        state.pose.orientation.y = current_state.orientation.y
+        state.pose.orientation.z = current_state.orientation.z
+        state.pose.orientation.w = current_state.orientation.w
 
         state.twist.linear.x = x
         state.twist.linear.y = y
@@ -148,8 +148,8 @@ class GazeboModel:
     #     self.twist = msg.twist[idx]
 
     # I'm gonna keep here but its slow! use subscriber instead
-    def get_model_state(self, model_name):
-        return self.__get_state(model_name=model_name, relative_entity_name="")
+    # def get_model_state(self, model_name):
+    #     return self.__get_state(model_name=model_name, relative_entity_name="")
 
     def delete_model(self, model_name):
         """

@@ -10,7 +10,7 @@ from cranavgym.ros_interface.ros_interface import ROSInterface
 import random
 import threading
 
-DISCRETE_ACTIONS = True
+DISCRETE_ACTIONS = False
 
 
 # import time
@@ -19,7 +19,7 @@ from squaternion import Quaternion
 
 
 # import pandas as pd
-from numba import njit
+# from numba import njit
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -546,10 +546,10 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
                 # move forward
             elif action == 1:
                 # default for map
-                # x_new, y_new = move_forward(x, y, euler[2], 0.1)
+                x_new, y_new = move_forward(x, y, euler[2], 0.1)
 
                 # for flight arena
-                x_new, y_new = move_forward(x, y, euler[2], 0.3)
+                # x_new, y_new = move_forward(x, y, euler[2], 0.3)
 
                 # x_new, y_new = move_forward(x, y, euler[2], 1.0)
                 self.ros.set_robot_position(x_new, y_new, quat)
@@ -587,7 +587,24 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         else:
             # CONTINUOUS ACTIONS
             # 7/3/25 - this is broken MW special, linx/y will need to be a vector
-            self.ros.set_robot_velocity(action[0], action[1], 0.0)
+            # self.ros.set_robot_velocity(action[0], action[1], 0.0)
+
+            #convert (local) forward velocity to global x/y velocity 
+            #first get the robot pose vector (quat) and convert to euler and scale by the forward velocity action
+            quat = self.ros.get_robot_quaternion()
+            euler = quat.to_euler(degrees=False)
+            yaw = euler[2]
+
+            #scale actions
+            action[0] *= 2
+            action[1] *= 6
+
+
+            x = math.cos(yaw) * action[0]
+            y = math.sin(yaw) * action[0]
+
+
+            self.ros.set_robot_velocity(x, y, action[1]) #15/03changes interface
 
             # Move to ros interface...
             # Publish visualization markers for debugging or monitoring

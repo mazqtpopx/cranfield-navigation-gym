@@ -49,42 +49,42 @@ Identifiers:
 DISCRETE_ACTIONS = False
 MULTIPLE_CAMERA_NOISE_AREAS = True
 
-from numba import njit
+# from numba import njit
 
 
-@njit
-def quaternion_to_euler(q):
-    x, y, z, w = q[0], q[1], q[2], q[3]
+# @njit
+# def quaternion_to_euler(q):
+#     x, y, z, w = q[0], q[1], q[2], q[3]
 
-    # Compute roll (x-axis rotation)
-    t0 = 2.0 * (w * x + y * z)
-    t1 = 1.0 - 2.0 * (x * x + y * y)
-    roll = np.arctan2(t0, t1)
+#     # Compute roll (x-axis rotation)
+#     t0 = 2.0 * (w * x + y * z)
+#     t1 = 1.0 - 2.0 * (x * x + y * y)
+#     roll = np.arctan2(t0, t1)
 
-    # Compute pitch (y-axis rotation)
-    t2 = 2.0 * (w * y - z * x)
-    t2 = max(min(t2, 1.0), -1.0)  # Clamp to [-1,1]
-    pitch = np.arcsin(t2)
+#     # Compute pitch (y-axis rotation)
+#     t2 = 2.0 * (w * y - z * x)
+#     t2 = max(min(t2, 1.0), -1.0)  # Clamp to [-1,1]
+#     pitch = np.arcsin(t2)
 
-    # Compute yaw (z-axis rotation)
-    t3 = 2.0 * (w * z + x * y)
-    t4 = 1.0 - 2.0 * (y * y + z * z)
-    yaw = np.arctan2(t3, t4)
+#     # Compute yaw (z-axis rotation)
+#     t3 = 2.0 * (w * z + x * y)
+#     t4 = 1.0 - 2.0 * (y * y + z * z)
+#     yaw = np.arctan2(t3, t4)
 
-    return np.array([roll, pitch, yaw])
+#     return np.array([roll, pitch, yaw])
 
 
-@njit
-def euler_to_quaternion(roll, pitch, yaw):
-    cr, cp, cy = np.cos(np.array([roll, pitch, yaw]) / 2)
-    sr, sp, sy = np.sin(np.array([roll, pitch, yaw]) / 2)
+# @njit
+# def euler_to_quaternion(roll, pitch, yaw):
+#     cr, cp, cy = np.cos(np.array([roll, pitch, yaw]) / 2)
+#     sr, sp, sy = np.sin(np.array([roll, pitch, yaw]) / 2)
 
-    w = cr * cp * cy + sr * sp * sy
-    x = sr * cp * cy - cr * sp * sy
-    y = cr * sp * cy + sr * cp * sy
-    z = cr * cp * sy - sr * sp * cy
+#     w = cr * cp * cy + sr * sp * sy
+#     x = sr * cp * cy - cr * sp * sy
+#     y = cr * sp * cy + sr * cp * sy
+#     z = cr * cp * sy - sr * sp * cy
 
-    return np.array([x, y, z, w])
+#     return np.array([x, y, z, w])
 
 
 class ROSInterface:
@@ -175,6 +175,7 @@ class ROSInterface:
         # init odom and goal positions
         self.__goal_x, self.__goal_y = 0.0, 0.0
         self.robot_pose = None
+        self.robot_twist = None
         # self.__last_odom = None
         self.__camera_data = np.zeros((img_width, img_height, 3))
         self.__time_delta = time_delta
@@ -251,7 +252,8 @@ class ROSInterface:
     # not actually used
     # @robot_velocity.setter - work out how to do getter/setters?
     def set_robot_velocity(self, linear_x, linear_y, angular_z):
-        self.__robot.set_velocity(linear_x, linear_y, 0, 0, 0, angular_z)
+        current_state = self.robot_pose
+        self.__robot.set_velocity(current_state, linear_x, linear_y, 0, 0, 0, angular_z)
         return
         # return
         # vel_cmd = Twist()
@@ -636,6 +638,10 @@ class ROSInterface:
         self.robot_pose_subscriber = rospy.Subscriber(
             "/robot_pose", Pose, self.robot_pose_callback
         )
+        self.robot_twist_subscriber = rospy.Subscriber(
+            "/robot_twist", Twist, self.robot_twist_callback
+        )
+
 
         # Collision stuff
         self.collision_subscriber = rospy.Subscriber(
@@ -770,6 +776,9 @@ class ROSInterface:
 
     def robot_pose_callback(self, msg):
         self.robot_pose = msg
+    
+    def robot_twist_callback(self, msg):
+        self.robot_twist = msg
     # def odom_callback(self, od_data):
     #     """
     #     Callback function for the odometry data.

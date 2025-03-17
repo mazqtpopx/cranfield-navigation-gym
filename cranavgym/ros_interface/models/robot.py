@@ -34,8 +34,8 @@ class Robot(GazeboModel):
         )
         self.__x_pos, self.__y_pos = x, y
 
-    def set_velocity(self, x, y, z, ax, ay, az):
-        self.set_model_velocity(self.__model_name, x, y, z, ax, ay, az)
+    def set_velocity(self, current_stare, x, y, z, ax, ay, az):
+        self.set_model_velocity(self.__model_name, current_stare, x, y, z, ax, ay, az)
 
 
     # def model_states_callback(self, msg):
