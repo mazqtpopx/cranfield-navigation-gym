@@ -589,22 +589,20 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             # 7/3/25 - this is broken MW special, linx/y will need to be a vector
             # self.ros.set_robot_velocity(action[0], action[1], 0.0)
 
-            #convert (local) forward velocity to global x/y velocity 
-            #first get the robot pose vector (quat) and convert to euler and scale by the forward velocity action
+            # convert (local) forward velocity to global x/y velocity
+            # first get the robot pose vector (quat) and convert to euler and scale by the forward velocity action
             quat = self.ros.get_robot_quaternion()
             euler = quat.to_euler(degrees=False)
             yaw = euler[2]
 
-            #scale actions
+            # scale actions
             action[0] *= 2
             action[1] *= 6
-
 
             x = math.cos(yaw) * action[0]
             y = math.sin(yaw) * action[0]
 
-
-            self.ros.set_robot_velocity(x, y, action[1]) #15/03changes interface
+            self.ros.set_robot_velocity(x, y, action[1])  # 15/03changes interface
 
             # Move to ros interface...
             # Publish visualization markers for debugging or monitoring

@@ -623,24 +623,40 @@ class ROSInterface:
     def __init_ROS_pubs_and_subs(self):
         # Set up the ROS publishers and subscribers
         self.vel_pub = rospy.Publisher("/r1/cmd_vel", Twist, queue_size=1)
-        self.set_state = rospy.Publisher(
-            "gazebo/set_model_state", ModelState, queue_size=10
-        )
+        # self.set_state = rospy.Publisher(
+        #     "gazebo/set_model_state", ModelState, queue_size=10
+        # )
         self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         self.reset_proxy = rospy.ServiceProxy("/gazebo/reset_world", Empty)
-        self.velodyne = rospy.Subscriber(
-            "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
-        )
+
+
+        #needed for lidar!!
+        # self.velodyne = rospy.Subscriber(
+        #     "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
+        # )
+        # Set up a Publisher for the noisy data
+        # self.noisy_image_pub = rospy.Publisher(
+        #     "/r1/front_camera/image_raw_noisy", Image, queue_size=10
+        # )
+        # self.noisy_velodyne_pub = rospy.Publisher(
+        #     "/velodyne_points_noisy", PointCloud2, queue_size=10
+        # )
+        # self.noisy_laserscan_pub = rospy.Publisher(
+        #     "/r1/front_laser/scan_noise", LaserScan, queue_size=10
+        # )
+
+
+
         # self.odom = rospy.Subscriber(
         #     "/r1/odom", Odometry, self.odom_callback, queue_size=1
         # )
         self.robot_pose_subscriber = rospy.Subscriber(
             "/robot_pose", Pose, self.robot_pose_callback
         )
-        self.robot_twist_subscriber = rospy.Subscriber(
-            "/robot_twist", Twist, self.robot_twist_callback
-        )
+        # self.robot_twist_subscriber = rospy.Subscriber(
+        #     "/robot_twist", Twist, self.robot_twist_callback
+        # )
 
 
         # Collision stuff
@@ -651,16 +667,7 @@ class ROSInterface:
             queue_size=1,
         )
 
-        # Set up a Publisher for the noisy data
-        self.noisy_image_pub = rospy.Publisher(
-            "/r1/front_camera/image_raw_noisy", Image, queue_size=10
-        )
-        self.noisy_velodyne_pub = rospy.Publisher(
-            "/velodyne_points_noisy", PointCloud2, queue_size=10
-        )
-        self.noisy_laserscan_pub = rospy.Publisher(
-            "/r1/front_laser/scan_noise", LaserScan, queue_size=10
-        )
+
         self.scan_msg = LaserScan()
 
         # Camera stuff
