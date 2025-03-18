@@ -21,10 +21,10 @@ tensorboard_dir: "~/cranfield-navigation-gym/log_dir/"
 
 TD3:
   policy_type: "MlpPolicy" # CnnPolicy, MlpPolicy, MultiInputPolicy
-  learning_starts: 2500
+  learning_starts: 1000
   tau: 0.005
   action_noise: "None"
-  batch_size: 256 # for camera only! take out from lidar
+  batch_size: 4096 # for camera only! take out from lidar
 
 
 PPO:
