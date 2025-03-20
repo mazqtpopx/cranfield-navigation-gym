@@ -249,10 +249,30 @@ class ROSInterface:
         # Otherwise, _current_velocity is a Twist, so we can query linear/angular velocity (forward, turn)
         return self._current_velocity.linear.x, self._current_velocity.angular.z
 
-    # not actually used
-    # @robot_velocity.setter - work out how to do getter/setters?
     def set_robot_velocity(self, linear_x, linear_y, angular_z):
         current_state = self.robot_pose
+        self.__robot.set_velocity(current_state, linear_x, linear_y, 0, 0, 0, angular_z)
+        return
+
+    # not actually used
+    # @robot_velocity.setter - work out how to do getter/setters?
+    def set_robot_velocity_pitch(self, linear_x, linear_y, angular_z, magnitude):
+        current_state = self.robot_pose
+
+        quat = self.get_robot_quaternion()
+        euler = quat.to_euler(degrees=False)
+        pitch = euler[1]
+
+        pitch = magnitude
+
+        # pitch = magnitude
+        quat_new = Quaternion.from_euler(euler[0], pitch, euler[2])
+
+        current_state.orientation.w = quat_new.w
+        current_state.orientation.x = quat_new.x
+        current_state.orientation.y = quat_new.y
+        current_state.orientation.z = quat_new.z
+
         self.__robot.set_velocity(current_state, linear_x, linear_y, 0, 0, 0, angular_z)
         return
         # return
@@ -630,8 +650,7 @@ class ROSInterface:
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         self.reset_proxy = rospy.ServiceProxy("/gazebo/reset_world", Empty)
 
-
-        #needed for lidar!!
+        # needed for lidar!!
         # self.velodyne = rospy.Subscriber(
         #     "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
         # )
@@ -646,8 +665,6 @@ class ROSInterface:
         #     "/r1/front_laser/scan_noise", LaserScan, queue_size=10
         # )
 
-
-
         # self.odom = rospy.Subscriber(
         #     "/r1/odom", Odometry, self.odom_callback, queue_size=1
         # )
@@ -658,7 +675,6 @@ class ROSInterface:
         #     "/robot_twist", Twist, self.robot_twist_callback
         # )
 
-
         # Collision stuff
         self.collision_subscriber = rospy.Subscriber(
             "/gazebo/robot_collisions",
@@ -666,7 +682,6 @@ class ROSInterface:
             self.collision_callback_default,
             queue_size=1,
         )
-
 
         self.scan_msg = LaserScan()
 
@@ -780,12 +795,12 @@ class ROSInterface:
         self.scan_msg.ranges = self.__velodyne_data.tolist()  # Set the range values
         self.noisy_laserscan_pub.publish(self.scan_msg)
 
-
     def robot_pose_callback(self, msg):
         self.robot_pose = msg
-    
+
     def robot_twist_callback(self, msg):
         self.robot_twist = msg
+
     # def odom_callback(self, od_data):
     #     """
     #     Callback function for the odometry data.

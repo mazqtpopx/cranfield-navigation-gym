@@ -6,6 +6,7 @@ from cranavgym.ros_interface.models.gazebo_model import GazeboModel
 # import rospy
 # from geometry_msgs.msg import Pose
 
+
 class Robot(GazeboModel):
     """Superclass for all Gazebo environments."""
 
@@ -37,7 +38,6 @@ class Robot(GazeboModel):
     def set_velocity(self, current_stare, x, y, z, ax, ay, az):
         self.set_model_velocity(self.__model_name, current_stare, x, y, z, ax, ay, az)
 
-
     # def model_states_callback(self, msg):
     #     self.pose = msg
 
@@ -46,4 +46,4 @@ class Robot(GazeboModel):
 
     # def get_rotation(self):
     #     return self.twist
-        # return self.get_model_state(self.__model_name)
+    # return self.get_model_state(self.__model_name)

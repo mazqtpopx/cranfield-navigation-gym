@@ -1,5 +1,5 @@
 import rospy
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist 
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState
 
@@ -37,9 +37,7 @@ class GazeboModel:
         # self.__set_state = rospy.Publisher("gazebo/set_model_state", ModelState)
         # self.__get_state = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)
 
-
         self.__spawned_models = []
-
 
     """
     This needs to be ... 

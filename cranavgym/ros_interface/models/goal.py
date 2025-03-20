@@ -16,6 +16,8 @@ class Goal(GazeboModel):
     def move(self, x, y):
         # goal_ok, goal_x, goal_y = self.__get_new_goal_post()
         self.move_model(self.__model_name, x, y, 0.25, 0, 0, 0, 1)
+        # for flight arena
+        # self.move_model(self.__model_name, x, y, -0.75, 0, 0, 0, 1)
 
         self.x_pos, self.y_pos = x, y
 
