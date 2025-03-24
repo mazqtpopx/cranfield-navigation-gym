@@ -11,6 +11,7 @@ import random
 import threading
 
 DISCRETE_ACTIONS = False
+FLIGHT_ARENA = True
 
 
 # import time
@@ -220,6 +221,11 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         # -----------------------------------ACTION/OBS SPACE--------------------------------------------
         if DISCRETE_ACTIONS:
             self.action_space = spaces.Discrete(4)
+        elif FLIGHT_ARENA:
+            self.action_space = spaces.Box(
+                np.array([0, -1, -1]).astype(np.float32),
+                np.array([+1, +1, +1]).astype(np.float32),
+            )  # PAN, TILT, ZOOM
         else:
             self.action_space = spaces.Box(
                 np.array([0, -1]).astype(np.float32),
@@ -244,11 +250,26 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         goal_polar_coordinate = spaces.Box(
             low=np.array([0, -np.pi]), high=np.array([20, np.pi]), dtype=np.float32
         )
-        actions = spaces.Box(
-            low=np.array([0.0, -1.0]),  # Lower bounds for linear and angular velocities
-            high=np.array([1.0, 1.0]),  # Upper bounds for linear and angular velocities
-            dtype=np.float32,
-        )
+        if FLIGHT_ARENA:
+            actions = spaces.Box(
+                low=np.array(
+                    [0.0, -1.0, -1.0]
+                ),  # Lower bounds for linear and angular velocities
+                high=np.array(
+                    [1.0, 1.0, 1.0]
+                ),  # Upper bounds for linear and angular velocities
+                dtype=np.float32,
+            )
+        else:
+            actions = spaces.Box(
+                low=np.array(
+                    [0.0, -1.0]
+                ),  # Lower bounds for linear and angular velocities
+                high=np.array(
+                    [1.0, 1.0]
+                ),  # Upper bounds for linear and angular velocities
+                dtype=np.float32,
+            )
 
         if self.obs_space == "lidar":
             # self.observation_space = spaces.Box(
@@ -317,7 +338,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         self.render_mode = "rgb_array"
 
         # Add to init!
-        self.goal_reached_threshold = 0.5
+        self.goal_reached_threshold = 0.25
 
         # self.profiler = StepProfilerPandas()
         # self.global_step = 0
@@ -344,7 +365,10 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         # threading.Thread(target=self.ros.unpause(), daemon=True).start()
         # self.ros.unpause()
         # perform actions (set the action to be the velocity of the robot)
-        self._perform_action(action)
+        if FLIGHT_ARENA:
+            self._perform_action_flight_arena(action)
+        else:
+            self._perform_action(action)
 
         # self._pause_ROS()
 
@@ -524,6 +548,53 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         # dist in meters, angle in degrees
         return dist_to_goal, angle_to_goal
 
+    def _perform_action_flight_arena(self, action):
+        quat = self.ros.get_robot_quaternion()
+        euler = quat.to_euler(degrees=False)
+        roll = euler[1]
+        yaw = euler[2]
+
+        # scale actions
+        # action[0] *= 2
+        # action[1] *= 6
+        # action[2] *= 6
+
+        # for flight arena
+        # action[0] *= 1
+        # action[1] *= 3
+
+        # for joystick flight arena
+        # action[0] /= 10
+        # action[1] /= 15
+
+        # for flight arena2 - NB: actual values used for training w/ cone!
+        action[0] *= 0.75
+        action[1] *= 0.75
+        action[2] *= 0.75
+
+        # action[0] = 0
+
+        x_pitch = math.cos(yaw) * action[0]
+        y_pitch = math.sin(yaw) * action[0]
+
+        x_roll = math.sin(yaw) * action[1]
+        y_roll = -math.cos(yaw) * action[1]
+
+        x = x_pitch + x_roll
+        y = y_pitch + y_roll
+
+        magnitude_pitch = action[0]
+        magnitude_roll = action[1]
+
+        # self.ros.set_robot_velocity_pitch(x, y, action[1], magnitude*0.5)  # 15/03changes interface
+        self.ros.set_robot_velocity_pitch(
+            x, y, action[2], magnitude_pitch * 0.4, magnitude_roll * 0.2
+        )
+
+        # Move to ros interface...
+        # Publish visualization markers for debugging or monitoring
+        self.ros.publish_velocity(action)
+
     # ----------------------STEP FUNCTIONS-------------------------
     # @profile
     def _perform_action(self, action):
@@ -599,10 +670,25 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             action[0] *= 2
             action[1] *= 6
 
+            # for flight arena
+            # action[0] *= 1
+            # action[1] *= 3
+
+            # for joystick flight arena
+            # action[0] /= 10
+            # action[1] /= 15
+
+            # for flight arena2 - NB: actual values used for training w/ cone!
+            # action[0] *= 1
+            # action[1] *= 1
+
             x = math.cos(yaw) * action[0]
             y = math.sin(yaw) * action[0]
 
-            self.ros.set_robot_velocity(x, y, action[1])  # 15/03changes interface
+            magnitude = action[0]
+
+            # self.ros.set_robot_velocity_pitch(x, y, action[1], magnitude*0.5)  # 15/03changes interface
+            self.ros.set_robot_velocity(x, y, action[1])
 
             # Move to ros interface...
             # Publish visualization markers for debugging or monitoring

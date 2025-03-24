@@ -38,4 +38,4 @@ PPO:
 PPO_LSTM:
   policy_type: "MlpPolicy"
   n_steps: 4096
-  batch_size: 2048
+  batch_size: 512

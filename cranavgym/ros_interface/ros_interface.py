@@ -256,17 +256,20 @@ class ROSInterface:
 
     # not actually used
     # @robot_velocity.setter - work out how to do getter/setters?
-    def set_robot_velocity_pitch(self, linear_x, linear_y, angular_z, magnitude):
+    def set_robot_velocity_pitch(
+        self, linear_x, linear_y, angular_z, magnitude_pitch, magnitude_roll
+    ):
         current_state = self.robot_pose
 
         quat = self.get_robot_quaternion()
         euler = quat.to_euler(degrees=False)
-        pitch = euler[1]
+        # pitch = euler[1]
 
-        pitch = magnitude
+        pitch = magnitude_pitch
+        roll = magnitude_roll
 
         # pitch = magnitude
-        quat_new = Quaternion.from_euler(euler[0], pitch, euler[2])
+        quat_new = Quaternion.from_euler(roll, pitch, euler[2])
 
         current_state.orientation.w = quat_new.w
         current_state.orientation.x = quat_new.x

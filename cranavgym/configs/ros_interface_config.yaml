@@ -4,8 +4,12 @@ ros:
   step_pause_time_delta: 0.000001 # 0.005 this works ok for 5 real time, 1000 hz
 
 map: 
-  min_xy: [-5,-5]
-  max_xy: [5,5]
+  min_xy: [-9.5,-2.5]
+  max_xy: [9.5,2.5]
+  # min_xy: [-5,-5]
+  # max_xy: [5,5]
+
+
 
 camera: 
   img_width: 160
