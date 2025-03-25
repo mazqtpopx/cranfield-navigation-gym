@@ -15,10 +15,10 @@ scenario_settings:
 
 drl_robot_navigation:
   camera_noise: false
-  camera_noise_area_size: [3,3]
+  camera_noise_area_size: [4,4]
   random_camera_noise_area: false #True/false
   static_camera_noise_area_pos: [0,0]
-  camera_noise_type: "fail" # "gaussian", "fail", "random_erase"
+  camera_noise_type: "gaussian" # "gaussian", "fail", "random_erase"
   lidar_noise: false
   lidar_noise_area_size: [4,4]
   random_lidar_noise_area: true

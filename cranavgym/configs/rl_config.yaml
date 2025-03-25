@@ -32,7 +32,7 @@ PPO:
   # n_steps: 256
   # batch_size: 256
   n_steps: 32768
-  batch_size: 8192
+  batch_size: 4096
 
 
 PPO_LSTM:

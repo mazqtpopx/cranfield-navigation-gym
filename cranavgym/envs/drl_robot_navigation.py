@@ -11,7 +11,7 @@ import random
 import threading
 
 DISCRETE_ACTIONS = False
-FLIGHT_ARENA = True
+FLIGHT_ARENA = False
 
 
 # import time
@@ -402,6 +402,11 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             collided, reached_goal, self.current_step, self.max_episode_steps
         )
 
+        if terminated or truncated:
+            print(
+                f"Terminated: {terminated}, truncated: {truncated}, collided: {collided}, goal reached: {reached_goal}, step number: {self.current_step}"
+            )
+
         x_vel, y_vel = self.ros.get_robot_velocity()
         info = {
             "x_position": self.ros.robot_position[0],
@@ -667,8 +672,8 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             yaw = euler[2]
 
             # scale actions
-            action[0] *= 2
-            action[1] *= 6
+            # action[0] *= 2
+            # action[1] *= 6
 
             # for flight arena
             # action[0] *= 1
@@ -681,6 +686,10 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             # for flight arena2 - NB: actual values used for training w/ cone!
             # action[0] *= 1
             # action[1] *= 1
+
+            # 24/03 MW special: updated cone training
+            action[0] *= 0.75
+            action[1] *= 0.75
 
             x = math.cos(yaw) * action[0]
             y = math.sin(yaw) * action[0]

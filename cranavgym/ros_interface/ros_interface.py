@@ -21,7 +21,7 @@ from std_srvs.srv import Empty
 
 from std_msgs.msg import Float64
 from geometry_msgs.msg import Pose
-
+from gazebo_msgs.srv import SpawnModel
 
 from cranavgym.ros_interface.utils.map import Map
 from cranavgym.ros_interface.utils.rectangle import Rectangle
@@ -48,6 +48,8 @@ Identifiers:
 
 DISCRETE_ACTIONS = False
 MULTIPLE_CAMERA_NOISE_AREAS = True
+GOAL_TYPE = "cone"  # "gate" or "cone"
+
 
 # from numba import njit
 
@@ -196,16 +198,44 @@ class ROSInterface:
         self.__marker_publisher = MarkerPublisher()
 
         # -----------------------------------GAZEBO MODELS--------------------------------------------------
+        if GOAL_TYPE == "gate":
+            goal_path = (
+                "~/ros-rl-env/catkin_ws/src/multi_robot_scenario/models/goal.sdf"
+            )
+        elif GOAL_TYPE == "cone":
+            goal_path = (
+                "~/ros-rl-env/catkin_ws/src/multi_robot_scenario/models/goal_cone.sdf"
+            )
+
         self.__goal = Goal(
             "goal_obj",
             self.__goal_x,
             self.__goal_y,
+            os.path.abspath(os.path.expanduser(goal_path)),
+        )
+
+        self.__box1 = Goal(
+            "box1_obj",
+            1,
+            1,
             os.path.abspath(
                 os.path.expanduser(
-                    "~/ros-rl-env/catkin_ws/src/multi_robot_scenario/models/goal.sdf"
+                    "~/ros-rl-env/catkin_ws/src/multi_robot_scenario/models/green_box.sdf"
                 )
             ),
         )
+
+        self.__box2 = Goal(
+            "box2_obj",
+            2,
+            2,
+            os.path.abspath(
+                os.path.expanduser(
+                    "~/ros-rl-env/catkin_ws/src/multi_robot_scenario/models/green_box.sdf"
+                )
+            ),
+        )
+
         self.__robot = Robot("r1", 0, 0)
 
         self.__soft_body_name = "foliage"  # This should be passed into the funct!
@@ -495,8 +525,21 @@ class ROSInterface:
             distance_to_robot = math.sqrt(
                 (robot_x - goal_x) ** 2 + (robot_y - goal_y) ** 2
             )
-
+        distance_to_goal1 = 0
+        while distance_to_goal1 < 3:
+            box1_x, box1_y = self.__map.get_random_point()
+            distance_to_goal1 = math.sqrt(
+                (goal_x - box1_x) ** 2 + (goal_y - box1_y) ** 2
+            )
+        distance_to_goal2 = 0
+        while distance_to_goal2 < 4:
+            box2_x, box2_y = self.__map.get_random_point()
+            distance_to_goal2 = math.sqrt(
+                (goal_x - box2_x) ** 2 + (goal_y - box2_y) ** 2
+            )
         self.__move_goal(goal_x, goal_y)
+        self.__move_box1(box1_x, box1_y)
+        self.__move_box2(box2_x, box2_y)
         self.__goal_x, self.__goal_y = goal_x, goal_y
 
     def __move_goal(self, x, y):
@@ -508,6 +551,26 @@ class ROSInterface:
             y (float): The y-coordinate of the goal.
         """
         self.__goal.move(x, y)
+
+    def __move_box1(self, x, y):
+        """
+        Moves the goal to the specified coordinates.
+
+        Args:
+            x (float): The x-coordinate of the goal.
+            y (float): The y-coordinate of the goal.
+        """
+        self.__box1.move(x, y)
+
+    def __move_box2(self, x, y):
+        """
+        Moves the goal to the specified coordinates.
+
+        Args:
+            x (float): The x-coordinate of the goal.
+            y (float): The y-coordinate of the goal.
+        """
+        self.__box2.move(x, y)
 
     def __move_robot(self, x, y, quat):
         """
