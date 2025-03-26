@@ -164,8 +164,8 @@ def plot_tsne(df):
     import os
 
     latent_features = []
-    log_dir = "/home/leo/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250311_145741_default_baseline/lf/"
-    for i in range(12183):
+    log_dir = "/home/leo/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250325_185905_PPO_continuous/lf/"
+    for i in range(9466):
         lf = np.load(os.path.join(log_dir, f"latent_features{i}.npy"))
         latent_features.append(lf)
 
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
     # obstacle_map
     # df_path = "~/cranfield-navigation-gym/log_dir/evaluation/0x0_evaluation/PPO_20240916_140744_default_baseline/evaluation_results_raw.pkl"
-    df_path = "~/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250311_145741_default_baseline/evaluation_results_raw.pkl"
+    df_path = "~/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250325_185905_PPO_continuous/evaluation_results_raw.pkl"
     # bk_w/obstacles
     bk_path = (
         "/home/leo/cranfield-navigation-gym/cranavgym/tests/value_function_bkground.png"
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     # )
 
     main(
-        "~/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250311_145741_default_baseline/evaluation_results_raw.pkl",
+        "~/cranfield-navigation-gym/log_dir/evaluation/camera_repeatability/PPO_20250325_185905_PPO_continuous/evaluation_results_raw.pkl",
         None,
         "ppo_0x0_eval_0x0_camera_path_Q",
         "PPO Trained on 0x0 Noise, Evaluated on 0x0 Noise, Q",

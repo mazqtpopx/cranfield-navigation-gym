@@ -124,14 +124,14 @@ def evaluate_policy(
             # print(f"{observations.shape=}")
 
             # Below should be enabled for frame stack is false
-            # obs_cwh = np.transpose(observations, (0, 3, 2, 1))
+            obs_cwh = np.transpose(observations, (0, 3, 2, 1))
             # Below should be enabled for frame stack is true
-            obs_cwh = observations
+            # obs_cwh = observations
             # print(f"{obs_cwh.shape=}")
             # get the value, then cast to cpu normal value (from a tensor)
-            #use below if frame stack is false
+            # use below if frame stack is false
             features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))[0]
-            #use below if frame stack is true
+            # use below if frame stack is true
             # features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))
             print(f"{features=}")
             print(f"{features.shape=}")
