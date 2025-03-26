@@ -597,7 +597,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
             # scale actions
             action[0] *= 2
-            action[1] *= 6
+            action[1] *= 4
 
             x = math.cos(yaw) * action[0]
             y = math.sin(yaw) * action[0]
