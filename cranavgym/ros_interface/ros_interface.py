@@ -746,7 +746,7 @@ class ROSInterface:
             "/gazebo/robot_collisions",
             ContactsState,
             self.collision_callback_default,
-            queue_size=1,
+            queue_size=100,
         )
 
         self.scan_msg = LaserScan()
@@ -887,8 +887,9 @@ class ROSInterface:
         """
         if contact_states.states:
             self.__collision_detection = True
-        else:
-            self.__collision_detection = False
+            # self.__collision_detection_sticky = False
+        # else:
+        #     self.__collision_detection = False
 
     def __collision_callback_i_room(self, contact_states):
         """
