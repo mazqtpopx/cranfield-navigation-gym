@@ -5,7 +5,7 @@
 experimental_notes : ""
 
 scenario_settings:
-  max_steps: 5000
+  max_steps: 500
   reward_threshold: 100 # is this needed?
   obs_space: "camera" #"lidar", "camera", "dict"
   static_goal: true

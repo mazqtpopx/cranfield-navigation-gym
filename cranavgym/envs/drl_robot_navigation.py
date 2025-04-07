@@ -319,6 +319,10 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         # Add to init!
         self.goal_reached_threshold = 0.5
 
+        self.TOTAL_EPS = 0
+        self.TOTAL_SUCCESS = 0
+        self.TOTAL_COLLISIONS = 0
+
         # self.profiler = StepProfilerPandas()
         # self.global_step = 0
 
@@ -827,6 +831,8 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         elif reached_goal:
             return True, False
         elif current_step >= max_episode_steps:
+            self.TOTAL_EPS += 1
+            print(f"reached end of ep: {self.TOTAL_EPS=}")
             return False, True
         else:
             return False, False
@@ -841,10 +847,19 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     #         return 1 / self.max_episode_steps
 
     def _get_reward_alternative(self, target, collision):
+
         if target:
             print("------------------Reached the goal-------------------")
+            self.TOTAL_EPS += 1
+            self.TOTAL_SUCCESS += 1
+            print(f"{self.TOTAL_SUCCESS=}/{self.TOTAL_EPS=}")
             return 1.0
+
         elif collision:
+            print("------------------Collision-------------------")
+            self.TOTAL_EPS += 1
+            self.TOTAL_COLLISIONS += 1
+            print(f"{self.TOTAL_COLLISIONS=}/{self.TOTAL_EPS=}")
             return -0.5
         else:
             return -(1 / self.max_episode_steps)

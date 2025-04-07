@@ -9,13 +9,51 @@ source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
 # python3.10 train.py -run-name PPO_random_goal_continuous_act_lr -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 5000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes " "
 
 
-source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
-python3.10 train.py -run-name PPO_random_goal_continuous_act_noise -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 8000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 3 -env-notes "Camera obs LR exploration " -algo-notes " "
+
+#27 NOISE RUNS
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_random_goal_continuous_act_noise5 -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 8000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 3 -env-notes "Camera obs LR exploration " -algo-notes " "
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name DEV_DELETE -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 5000000 --no-static-goal --no-frame-stack--camera-noise -camera-noise-size 5 -env-notes "Camera obs LR exploration " -algo-notes " " -load-model-path "/home/leo/cranfield-navigation-gym/log_dir/PPO_20250326_153225_PPO_random_goal_continuous_act_lr/model/best_model.zip"
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name DEV_DELETE -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 5000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 5 -env-notes "Camera obs LR exploration " -algo-notes " " -load-model-path "/home/leo/cranfield-navigation-gym/log_dir/PPO_20250326_153225_PPO_random_goal_continuous_act_lr/model/best_model.zip"
+
+
+
+#28 PPO lstm + noise runs
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_00003 -obs "camera" -algo PPO_LSTM -lr 0.00003 -max-training-steps 1000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes " "
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_0003 -obs "camera" -algo PPO_LSTM -lr 0.0003 -max-training-steps 3000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes "batch 256 n steps"
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_00003 -obs "camera" -algo PPO_LSTM -lr 0.00003 -max-training-steps 3000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes "batch 256 n steps"
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_000003 -obs "camera" -algo PPO_LSTM -lr 0.000003 -max-training-steps 3000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes "batch 256 n steps"
+
+
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_000075 -obs "camera" -algo PPO_LSTM -lr 0.000075 -max-training-steps 1000000 --no-static-goal --no-frame-stack -env-notes "Camera obs LR exploration " -algo-notes " "
 
 
 
 source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
-python3.10 train.py -run-name PPO_random_goal_continuous_act_noise_retrain -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 8000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 3 -env-notes "Camera obs LR exploration " -algo-notes " " -load-model-path "/home/leo/cranfield-navigation-gym/log_dir/PPO_20250326_153225_PPO_random_goal_continuous_act_lr/model/best_model.zip"
+python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_lr0_00003_noise3 -obs "camera" -algo PPO_LSTM -lr 0.00003 -max-training-steps 3000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 3 -env-notes "Camera obs LR exploration " -algo-notes " "
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_noise5 -obs "camera" -algo PPO_LSTM -lr 0.00003 -max-training-steps 10000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 5 -env-notes "Camera obs LR exploration " -algo-notes " "
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name PPO_LSTM_random_goal_continuous_act_noise3 -obs "camera" -algo PPO_LSTM -lr 0.00003 -max-training-steps 10000000 --no-static-goal --no-frame-stack --camera-noise -camera-noise-size 3 -env-notes "Camera obs LR exploration " -algo-notes " "
+
+# source /home/leo/cranfield-navigation-gym/cranavgym/tests/setup_env.sh
+# python3.10 train.py -run-name DEV_DELETE -obs "camera" -algo PPO -lr 0.00003 -max-training-steps 5000000 --no-static-goal --no-frame-stack--camera-noise -camera-noise-size 5 -env-notes "Camera obs LR exploration " -algo-notes " " -load-model-path "/home/leo/cranfield-navigation-gym/log_dir/PPO_20250326_153225_PPO_random_goal_continuous_act_lr/model/best_model.zip"
+
+
 
 
 #Cone only obstacles + 

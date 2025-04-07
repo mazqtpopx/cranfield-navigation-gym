@@ -10,7 +10,7 @@ batch_size: 16384
 evaluate_only: true
 
 #"TD3", "PPO", "PPO_LSTM", or "DreamerV3"
-algorithm: "TD3"
+algorithm: "PPO"
 
 log_dir: "~/cranfield-navigation-gym/log_dir/"
 tensorboard_dir: "~/cranfield-navigation-gym/log_dir/"

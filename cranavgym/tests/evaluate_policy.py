@@ -16,6 +16,8 @@ from stable_baselines3.common.vec_env import (
 # extra for mw
 from stable_baselines3.common.utils import obs_as_tensor
 import torch as th
+import os
+from PIL import Image
 
 
 def evaluate_policy(
@@ -28,6 +30,7 @@ def evaluate_policy(
     reward_threshold: Optional[float] = None,
     return_episode_rewards: bool = False,
     warn: bool = True,
+    log_dir=None,
 ) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
@@ -92,6 +95,12 @@ def evaluate_policy(
     current_episode_values = []
     episode_features = []
     current_episode_features = []
+    episode_states = []
+    current_episode_states = []
+    episode_actions = []
+    current_episode_actions = []
+
+    total_counter = 0
 
     episode_counts = np.zeros(n_envs, dtype="int")
     # Divides episodes among different sub environments in the vector as evenly as possible
@@ -116,31 +125,50 @@ def evaluate_policy(
         # actions, values, log_probs = self.policy(obs_tensor)
 
         # NB: this only works for PPO
-        with th.no_grad():
-            # Convert to pytorch tensor or to TensorDict
-            # obs_tensor = obs_as_tensor(observations, "cuda")
-            # actions, values, log_probs = model.policy(obs_tensor)
-            # convert WHC to CWH
-            # print(f"{observations.shape=}")
+        # with th.no_grad():
+        #     # Convert to pytorch tensor or to TensorDict
+        #     # obs_tensor = obs_as_tensor(observations, "cuda")
+        #     # actions, values, log_probs = model.policy(obs_tensor)
+        #     # convert WHC to CWH
+        #     # print(f"{observations.shape=}")
 
-            # Below should be enabled for frame stack is false
-            obs_cwh = np.transpose(observations, (0, 3, 2, 1))
-            # Below should be enabled for frame stack is true
-            # obs_cwh = observations
-            # print(f"{obs_cwh.shape=}")
-            # get the value, then cast to cpu normal value (from a tensor)
-            # use below if frame stack is false
-            features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))[0]
-            # use below if frame stack is true
-            # features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))
-            print(f"{features=}")
-            print(f"{features.shape=}")
-            value = model.policy.predict_values(obs_as_tensor(obs_cwh, "cuda")).item()
-            # value = 0
-            # print(f"{value=}")
-        # value = 0
+        #     # Below should be enabled for frame stack is false
+        #     obs_cwh = np.transpose(observations, (0, 3, 2, 1))
+        #     # Below should be enabled for frame stack is true
+        #     # obs_cwh = observations
+        #     # print(f"{obs_cwh.shape=}")
+        #     # get the value, then cast to cpu normal value (from a tensor)
+        #     # use below if frame stack is false
+        #     features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))[0]
+        #     # use below if frame stack is true
+        #     # features = model.policy.extract_features(obs_as_tensor(obs_cwh, "cuda"))
+        #     print(f"{features=}")
+        #     print(f"{features.shape=}")
+        #     value = model.policy.predict_values(obs_as_tensor(obs_cwh, "cuda")).item()
+        #     # value = 0
+        #     # print(f"{value=}")
+
+        # IF TD3:
+        value = 0
+        features = None
+        lf = None
         current_episode_values.append(value)
         current_episode_features.append(features)
+        current_episode_states.append(observations)
+        current_episode_actions.append(actions)
+
+        lf_name = f"latent_features{total_counter}.npy"
+        state_name = f"state{total_counter}.png"
+        # IF PPO:
+        # lf = features.detach().cpu().numpy()
+        state = observations[0]
+
+        latent_features_name = np.save(os.path.join(log_dir, f"lf/{lf_name}"), lf)
+        # # convert state to PIL image and flip BGR>RGB
+        im = Image.fromarray(state[:, :, ::-1])
+        state_name = os.path.join(log_dir, f"states/{state_name}")
+        im.save(state_name)
+        total_counter += 1
 
         # params = model.get_parameters()
         # for key, value in params.items():
@@ -177,6 +205,8 @@ def evaluate_policy(
                             episode_infos.append(current_episode_infos)
                             episode_values.append(current_episode_values)
                             episode_features.append(current_episode_features)
+                            episode_states.append(current_episode_states)
+                            episode_actions.append(current_episode_actions)
                             current_episode_infos = []
                             # Only increment at the real end of an episode
                             episode_counts[i] += 1
@@ -205,6 +235,8 @@ def evaluate_policy(
             episode_lengths,
             episode_infos,
             episode_values,
-            episode_features,
+            # episode_features,
+            # episode_states,
+            episode_actions,
         )
     return mean_reward, std_reward

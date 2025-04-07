@@ -35,6 +35,7 @@ from customcnn import CustomCNN
 from saveonbesttrainingcallback import SaveOnBestTrainingRewardCallback
 
 import torch as th
+from PIL import Image
 
 th.autograd.set_detect_anomaly(True)
 
@@ -50,6 +51,9 @@ class bcolors:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
+
+# used to create a subdirectory in the valuation dir
+EVALUATION_NAME = "td3_ppolstm_eval"
 
 # -------------------------------CONFIGS---------------------------------
 # def load_ros_config():
@@ -234,24 +238,29 @@ def main(env_config, ros_config, rl_config, run_name):
 
 
 def evaluate(model, env, log_dir):
-    n_eval_episodes = 50
+    n_eval_episodes = 100
+    os.makedirs(os.path.join(log_dir, "lf"), exist_ok=True)
+    os.makedirs(os.path.join(log_dir, "states"), exist_ok=True)
     print(f"Finished training. Starting evaluation")
     (
         episode_rewards,
         episode_lengths,
         episode_infos,
         episode_values,
-        episode_features,
+        # episode_features,
+        # episode_states,
+        episode_actions,
     ) = evaluate_policy(
         model,
         env,
         n_eval_episodes=n_eval_episodes,
-        deterministic=True,
+        deterministic=False,
         render=False,
         callback=None,
         reward_threshold=None,
         return_episode_rewards=True,
         warn=True,
+        log_dir=log_dir,
     )
     print(
         f"Evaluation results across {n_eval_episodes} episodes: {np.mean(episode_rewards)=} {np.std(episode_rewards)=}"
@@ -262,12 +271,22 @@ def evaluate(model, env, log_dir):
     rows = []
     i = 0
     # make dir to store the latent features
-    os.makedirs(os.path.join(log_dir, "lf"), exist_ok=True)
+
     for ep in range(n_eval_episodes):
         for step in range(episode_lengths[ep]):
             lf_name = f"latent_features{i}.npy"
-            lf = episode_features[ep][step].detach().cpu().numpy()
-            latent_features_name = np.save(os.path.join(log_dir, f"lf/{lf_name}"), lf)
+            state_name = f"state{i}.png"
+            # lf = episode_features[ep][step].detach().cpu().numpy()
+            # state = episode_states[ep][step][0]
+            action = episode_actions[ep][step][0]
+
+            latent_features_name = os.path.join(log_dir, f"lf/{lf_name}")
+            # convert state to PIL image and flip BGR>RGB
+            # im = Image.fromarray(state[:, :, ::-1])
+            state_name = os.path.join(log_dir, f"states/{state_name}")
+            # im.save(state_name)
+
+            # action_name = np.save(os.path.join(log_dir, f"lf/{lf_name}"), lf)
             data_step = {
                 "episode": ep,
                 "x_position": episode_infos[ep][step][0]["x_position"],
@@ -279,6 +298,9 @@ def evaluate(model, env, log_dir):
                 "angle_to_goal": episode_infos[ep][step][0]["angle_to_goal"],
                 "value": episode_values[ep][step],
                 "latent_features_name": latent_features_name,
+                "state_name": state_name,
+                "action0": action[0],
+                "action1": action[1],
             }
             # df.loc[i] = pd.concat([df, pd.DataFrame([data_step])])
             rows.append(data_step)
@@ -531,7 +553,7 @@ def setup_PPO_camera(env, rl_config, tensorboard_dir):
 def setup_PPO_LSTM_camera(env, rl_config, tensorboard_dir):
     policy_kwargs = dict(
         features_extractor_class=CustomCNN,
-        features_extractor_kwargs=dict(features_dim=256),
+        features_extractor_kwargs=dict(features_dim=512),
     )
 
     if rl_config.load_model_path is not (None or ""):
@@ -573,7 +595,7 @@ def get_log_dir(log_dir_basepath, algorithm, evaluate_only, run_name="default"):
                 os.path.join(
                     log_dir_basepath,
                     "evaluation",
-                    "camera_repeatability",
+                    EVALUATION_NAME,
                     algorithm + "_" + str(now) + "_" + run_name,
                 )
             )
