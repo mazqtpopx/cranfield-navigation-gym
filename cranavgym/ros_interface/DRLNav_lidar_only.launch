@@ -2,7 +2,7 @@
   <arg name="gui" value="true"/>
   <arg name="rviz" value="false"/>
   <!-- TD3_i_map for I shaped map or TD3.world for our map -->
-  <arg name="world_name" value="$(find multi_robot_scenario)/worlds/Navigation_default.world"/>
+  <arg name="world_name" value="$(find multi_robot_scenario)/worlds/Navigation_fast.world"/>
   <!-- <arg name="world_name" value="/home/leo/ros-rl-env/catkin_ws/src/hector_quadrotor_noetic/hector_gazebo/hector_gazebo_worlds/worlds/rolling_landscape_120m.world"/> -->
 
     <!-- Gazebo  -->
@@ -12,7 +12,7 @@
     </include>
 
   <!-- Robot with diff drive -->
-  <include file="$(find multi_robot_scenario)/launch/pioneer3dx.gazebo.launch">
+  <include file="$(find multi_robot_scenario)/launch/pioneer3dx_lidar.gazebo.launch">
     <arg name="robot_name" value="r1" />
     <arg name="robot_position" value="-x 0.0 -y 0.0 -z 0.01 -R 0 -P 0 -Y +0.0" />
   </include>
