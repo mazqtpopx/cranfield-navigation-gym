@@ -46,46 +46,7 @@ Identifiers:
 -
 """
 
-DISCRETE_ACTIONS = False
-MULTIPLE_CAMERA_NOISE_AREAS = True
-
-# from numba import njit
-
-
-# @njit
-# def quaternion_to_euler(q):
-#     x, y, z, w = q[0], q[1], q[2], q[3]
-
-#     # Compute roll (x-axis rotation)
-#     t0 = 2.0 * (w * x + y * z)
-#     t1 = 1.0 - 2.0 * (x * x + y * y)
-#     roll = np.arctan2(t0, t1)
-
-#     # Compute pitch (y-axis rotation)
-#     t2 = 2.0 * (w * y - z * x)
-#     t2 = max(min(t2, 1.0), -1.0)  # Clamp to [-1,1]
-#     pitch = np.arcsin(t2)
-
-#     # Compute yaw (z-axis rotation)
-#     t3 = 2.0 * (w * z + x * y)
-#     t4 = 1.0 - 2.0 * (y * y + z * z)
-#     yaw = np.arctan2(t3, t4)
-
-#     return np.array([roll, pitch, yaw])
-
-
-# @njit
-# def euler_to_quaternion(roll, pitch, yaw):
-#     cr, cp, cy = np.cos(np.array([roll, pitch, yaw]) / 2)
-#     sr, sp, sy = np.sin(np.array([roll, pitch, yaw]) / 2)
-
-#     w = cr * cp * cy + sr * sp * sy
-#     x = sr * cp * cy - cr * sp * sy
-#     y = cr * sp * cy + sr * cp * sy
-#     z = cr * cp * sy - sr * sp * cy
-
-#     return np.array([x, y, z, w])
-
+FAST = True
 
 class ROSInterface:
     """
@@ -122,8 +83,6 @@ class ROSInterface:
             img_width (int, optional): The width of the camera image. Defaults to 160.
             img_height (int, optional): The height of the camera image. Defaults to 160.
             camera_noise_type (str, optional): The type of noise to apply to the camera. Defaults to "gaussian".
-            18/09 - moving to function input # camera_noise_area_size (list, optional): The size of the area for camera noise. Defaults to [4, 4].
-            18/09 - moving to function input # lidar_noise_area_size (list, optional): The size of the area for lidar noise. Defaults to [4, 4].
             lidar_dim (int, optional): The dimension of the lidar. Defaults to 20.
             static_goal (bool, optional): Flag indicating whether the goal position is static. Defaults to False.
             static_goal_xy (list, optional): The x and y coordinates of the static goal position. Defaults to [3, 3].
@@ -167,10 +126,6 @@ class ROSInterface:
         self._camera_noise_area = Rectangle(10, 10, 0, 0)
         self._lidar_noise_area = Rectangle(10, 10, 0, 0)
 
-        # Create a rectangle at a random position for lidar
-        # self.__lidar_noise = lidar_noise
-        # self.__init_lidar_noise_area() - do we actually need to init this? just call during reset!
-
         # -----------------------------------INIT VARIABLES--------------------------------------------------
         # init odom and goal positions
         self.__goal_x, self.__goal_y = 0.0, 0.0
@@ -196,6 +151,7 @@ class ROSInterface:
         self.__marker_publisher = MarkerPublisher()
 
         # -----------------------------------GAZEBO MODELS--------------------------------------------------
+        #TODO: move this hardcoded path to config! along with other hardcoded vals (r1, foliage,etc)
         self.__goal = Goal(
             "goal_obj",
             self.__goal_x,
@@ -217,33 +173,30 @@ class ROSInterface:
     # -----------------------------------Getters + Setters-------------------------------------------------
     @property
     def robot_position(self):
-        # pos = self.__robot.get_position()
-
-        if self.robot_pose is not None:
-            return (
-                self.robot_pose.position.x,
-                self.robot_pose.position.y,
-            )
+        #If FAST, use the robot pose
+        #Otherwise, use odometry  
+        if FAST:
+            if self.robot_pose is not None:
+                return (
+                    self.robot_pose.position.x,
+                    self.robot_pose.position.y,
+                )
+            else:
+                return (0, 0)
         else:
-            return (0, 0)
-        # if self.__last_odom is None:
-        #     return 0, 0
-        # return (
-        #     self.__last_odom.pose.pose.position.x,
-        #     self.__last_odom.pose.pose.position.y,
-        # )
-
-    # not actually used
-    @robot_position.setter
-    def robot_position(self, x, y, quaternion):
-        self.__move_robot(x, y, quaternion)
+            if self.__last_odom is None:
+                return 0, 0
+            return (
+                self.__last_odom.pose.pose.position.x,
+                self.__last_odom.pose.pose.position.y,
+            )
 
     def set_robot_position(self, x, y, quaternion):
         self.__move_robot(x, y, quaternion)
         return
 
-    # @property
-    def get_robot_velocity(self):
+    @property
+    def robot_velocity(self):
         if self._current_velocity is None:
             return 0.0, 0.0
         # Otherwise, _current_velocity is a Twist, so we can query linear/angular velocity (forward, turn)
@@ -254,12 +207,11 @@ class ROSInterface:
         self.__robot.set_velocity(current_state, linear_x, linear_y, 0, 0, 0, angular_z)
         return
 
-    # not actually used
-    # @robot_velocity.setter - work out how to do getter/setters?
+    # not actually used (special function for pretending to be a drone and simulating pitch)
     def set_robot_velocity_pitch(self, linear_x, linear_y, angular_z, magnitude):
         current_state = self.robot_pose
 
-        quat = self.get_robot_quaternion()
+        quat = self.robot_quaternion
         euler = quat.to_euler(degrees=False)
         pitch = euler[1]
 
@@ -275,22 +227,16 @@ class ROSInterface:
 
         self.__robot.set_velocity(current_state, linear_x, linear_y, 0, 0, 0, angular_z)
         return
-        # return
-        # vel_cmd = Twist()
-        # vel_cmd.linear.x = linear_x
-        # vel_cmd.angular.z = angular_z
-        # self.vel_pub.publish(vel_cmd)
-        # self._current_velocity = vel_cmd
 
-    # archive
-    # def set_robot_velocities(self, linear_x, angular_z):
-    #     vel_cmd = Twist()
-    #     vel_cmd.linear.x = linear_x
-    #     vel_cmd.angular.z = angular_z
-    #     self.vel_pub.publish(vel_cmd)
-    #     self._current_velocity = vel_cmd
+    def set_robot_velocities_slow(self, linear_x, angular_z):
+        vel_cmd = Twist()
+        vel_cmd.linear.x = linear_x
+        vel_cmd.angular.z = angular_z
+        self.vel_pub.publish(vel_cmd)
+        self._current_velocity = vel_cmd
 
-    def get_robot_quaternion(self):
+    @property
+    def robot_quaternion(self):
         if self.robot_pose is None:
             return Quaternion(0, 0, 0, 0)
         quaternion = Quaternion(
@@ -300,39 +246,25 @@ class ROSInterface:
             self.robot_pose.orientation.z,
         )
         return quaternion
-        # quaternion = Quaternion(
-        #     self.__last_odom.pose.pose.orientation.w,
-        #     self.__last_odom.pose.pose.orientation.x,
-        #     self.__last_odom.pose.pose.orientation.y,
-        #     self.__last_odom.pose.pose.orientation.z,
-        # )
-        # quaternion = Rotation.from_quat([
-        #     self.__last_odom.pose.pose.orientation.x,
-        #     self.__last_odom.pose.pose.orientation.y,
-        #     self.__last_odom.pose.pose.orientation.z,
-        #     self.__last_odom.pose.pose.orientation.w,
-        # ], scalar_first=False)
-        # return quaternion
-        # return [
-        #     self.__last_odom.pose.pose.orientation.x,
-        #     self.__last_odom.pose.pose.orientation.y,
-        #     self.__last_odom.pose.pose.orientation.z,
-        #     self.__last_odom.pose.pose.orientation.w,
-        # ]
 
-    def get_goal_position(self):
+    @property
+    def goal_position(self):
         return self.__goal_x, self.__goal_y
 
-    def get_velodyne_data(self):
+    @property
+    def velodyne_data(self):
         return self.__velodyne_data
 
-    def get_camera_data(self):
-        # return cv2.resize(self.__camera_data, (self._img_width, self._img_height))
-        # get rid of resizes: these slow the sim down!
-        # Instead define correct size in the xacro
-        return self.__camera_data
-
-    def get_collision_status(self):
+    @property
+    def camera_data(self):
+        #If fast, the camera data is predefined in the Gazebo xacro files
+        if FAST:
+            return self.__camera_data
+        else: #otherwise, resize the image using cv2
+            return cv2.resize(self.__camera_data, (self._img_width, self._img_height))
+        
+    @property
+    def collision_status(self):
         return self.__collision_detection
 
     def reset_collision_status(self):
@@ -406,7 +338,7 @@ class ROSInterface:
             action (str): The action to be performed.
         """
         goal_x, goal_y = (
-            self.get_goal_position()
+            self.goal_position
         )  # apparently were showing goal position here for some reason?
         self.__marker_publisher.publish_velocity_markers(
             action, "base_link", goal_x, goal_y
@@ -419,7 +351,7 @@ class ROSInterface:
         Retrieves the goal position using the `get_goal_position` method and publishes it as goal markers
         using the `marker_publisher.publish_goal_markers` method.
         """
-        goal_x, goal_y = self.get_goal_position()
+        goal_x, goal_y = self.goal_position
         self.__marker_publisher.publish_goal_markers("odom", goal_x, goal_y)
 
     # -----------------------------------Private Functs-------------------------------------------------
@@ -522,11 +454,6 @@ class ROSInterface:
         elif isinstance(quat, Rotation):
             q = quat.as_quat()
             self.__robot.move(x, y, q[0], q[1], q[2], q[3])
-
-            # self.__robot.move(x, y, q[0], q[1], q[2], q[3])
-            # xyzw
-            # self.__robot.move(x, y, q[1], q[2], q[3], q[0])
-            # self.__robot.move(x, y, q[3], q[0], q[1], q[2])
         else:
             # assume xyzw
             q = quat
@@ -534,38 +461,6 @@ class ROSInterface:
 
     # -----------------------------------Standard functs-------------------------------------------------
     # ---------------------------------(pause, close, etc)-------------------------------------------------
-    # NB: THESE FUNCTS CANT BE CALLED just 'pause'! because, self.pause is a reserved
-    def pause_ros(self):
-        """
-        Pauses the ROS interface by calling the appropriate Gazebo services.
-
-        This method waits for the "/gazebo/unpause_physics" service before trying to unpause the physics simulation.
-        If the service call fails, it logs an error message.
-
-        After unpausing the physics simulation, it sleeps for a specified time delta.
-
-        Then, it waits for the "/gazebo/pause_physics" service before trying to pause the physics simulation.
-        If the service call fails, it logs an error message.
-        """
-
-        # rospy.wait_for_service(
-        #     "/gazebo/unpause_physics"
-        # )  # Wait for service before you try
-        try:
-            self.unpause()
-        except rospy.ServiceException as e:
-            rospy.loginfo("/gazebo/unpause_physics service call failed")
-
-        # time.sleep(self.__time_delta)  # propagate state for TIME_DELTA seconds
-
-        # rospy.wait_for_service(
-        #     "/gazebo/pause_physics"
-        # )  # Wait for service before you try
-        # try:
-        #     self.pause()
-        # except rospy.ServiceException as e:
-        #     rospy.loginfo("/gazebo/pause_physics service call failed")
-
     def reset_ros(self):
         """
         Resets the ROS environment by calling the "/gazebo/reset_world" service.
@@ -642,7 +537,7 @@ class ROSInterface:
 
     def __init_ROS_pubs_and_subs(self):
         # Set up the ROS publishers and subscribers
-        self.vel_pub = rospy.Publisher("/r1/cmd_vel", Twist, queue_size=1)
+
         # self.set_state = rospy.Publisher(
         #     "gazebo/set_model_state", ModelState, queue_size=10
         # )
@@ -650,30 +545,37 @@ class ROSInterface:
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         self.reset_proxy = rospy.ServiceProxy("/gazebo/reset_world", Empty)
 
-        # needed for lidar!!
-        # self.velodyne = rospy.Subscriber(
-        #     "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
-        # )
-        # Set up a Publisher for the noisy data
-        # self.noisy_image_pub = rospy.Publisher(
-        #     "/r1/front_camera/image_raw_noisy", Image, queue_size=10
-        # )
-        # self.noisy_velodyne_pub = rospy.Publisher(
-        #     "/velodyne_points_noisy", PointCloud2, queue_size=10
-        # )
-        # self.noisy_laserscan_pub = rospy.Publisher(
-        #     "/r1/front_laser/scan_noise", LaserScan, queue_size=10
-        # )
 
-        # self.odom = rospy.Subscriber(
-        #     "/r1/odom", Odometry, self.odom_callback, queue_size=1
-        # )
-        self.robot_pose_subscriber = rospy.Subscriber(
-            "/robot_pose", Pose, self.robot_pose_callback
-        )
-        # self.robot_twist_subscriber = rospy.Subscriber(
-        #     "/robot_twist", Twist, self.robot_twist_callback
-        # )
+        if not FAST:
+            self.vel_pub = rospy.Publisher("/r1/cmd_vel", Twist, queue_size=1)
+            self.odom = rospy.Subscriber(
+                "/r1/odom", Odometry, self.odom_callback, queue_size=1
+            )
+            #NB: not sure if robot twist is used
+            self.robot_twist_subscriber = rospy.Subscriber(
+                "/robot_twist", Twist, self.robot_twist_callback
+            )
+            # needed for lidar!!
+            self.velodyne = rospy.Subscriber(
+                "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
+            )
+            # Set up a Publisher for the noisy data
+            self.noisy_image_pub = rospy.Publisher(
+                "/r1/front_camera/image_raw_noisy", Image, queue_size=10
+            )
+            self.noisy_velodyne_pub = rospy.Publisher(
+                "/velodyne_points_noisy", PointCloud2, queue_size=10
+            )
+            self.noisy_laserscan_pub = rospy.Publisher(
+                "/r1/front_laser/scan_noise", LaserScan, queue_size=10
+            )
+
+        #If fast simulation: use the robot_pose publisher
+        #Otherwise, use the odometry of the robot
+        if FAST:
+            self.robot_pose_subscriber = rospy.Subscriber(
+                "/robot_pose", Pose, self.robot_pose_callback
+            )
 
         # Collision stuff
         self.collision_subscriber = rospy.Subscriber(
@@ -801,14 +703,14 @@ class ROSInterface:
     def robot_twist_callback(self, msg):
         self.robot_twist = msg
 
-    # def odom_callback(self, od_data):
-    #     """
-    #     Callback function for the odometry data.
+    def odom_callback(self, od_data):
+        """
+        Callback function for the odometry data.
 
-    #     Args:
-    #         od_data: The odometry data received from the ROS topic.
-    #     """
-    #     self.__last_odom = od_data
+        Args:
+            od_data: The odometry data received from the ROS topic.
+        """
+        self.__last_odom = od_data
 
     def collision_callback_default(self, contact_states):
         """Collisions Callback
