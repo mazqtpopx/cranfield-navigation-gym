@@ -2,7 +2,8 @@
 <p align="center">
     <img width=40% src="https://github.com/mazqtpopx/cranfield-navigation-gym/blob/main/gifs/quick-train2.gif">
 </p>
-End-to-end vision based navigation
+End-to-end vision based navigation.
+
 ## A ROS-based Gymnasium for Training DRL Agents in Adversiarially Perturbed Navigation Scenarios
 This repository provides a **ROS-Gymnasium Wrapper** designed for developing and training Deep Reinforcement Learning (DRL) models using the Robot Operating System (ROS) for adversially perturbed (i.e. sensor denial and noise sensor areas in the environment) navigation scenarios. The package integrates with ROS (Robot Operating System) for real-time communication and Gazebo for 3D simulation, and it supports popular DRL algorithms such as TD3 and PPO through [Stable Baselines3](https://github.com/DLR-RM/stable-baselines3). 
 
