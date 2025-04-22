@@ -553,7 +553,7 @@ class DRLRobotNavigation(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         if NORMALIZE_AND_FLIP_CHANNELS:
             state = self._pack_state_img(camera_state)
         else:
-            state = np.array(state, dtype=np.uint8)
+            state = np.array(camera_state, dtype=np.uint8)
         return state
     
     def _get_state_dict(self, action):
